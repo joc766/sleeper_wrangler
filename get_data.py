@@ -62,6 +62,17 @@ def get_rosters(leagueid):
 
     return data
 
+def get_user_data(userID):
+    url = 'https://api.sleeper.app/v1/user/' + userID
+    response = requests.get(url)
+    
+    response.raise_for_status()
+
+    data = response.json()
+
+    return data
+
+
 if __name__ == "__main__":
     # db_name = 'sleeper.db'
     # schema_path = '/Users/jackoconnor/Desktop/Football/sleeper.sql'
@@ -88,10 +99,14 @@ if __name__ == "__main__":
 
     league_users = get_league_users(LEAGUE_ID)
     league_user_qry = 'INSERT INTO LeagueUser (LeagueUserID, UserID, LeagueID, TeamName, AvatarID) VALUES '
+    user_qry = 'INSERT INTO [User] (UserID, UserName, DisplayName, JSONData) VALUES '
     for i, data in enumerate(league_users):
         league_user_qry += f'({i}, \'{data["user_id"]}\',\'{data["league_id"]}\',\'{data["metadata"]["team_name"]}\',\'{data["avatar"]}\')'
+        user_data = get_user_data(data["user_id"])
+        user_qry += f'(\'{user_data["user_id"]}\',\'{user_data["username"]}\',\'{user_data["display_name"]}\',\'{json.dumps(user_data)}\')'
         if i != len(league_users) - 1:
             league_user_qry += ','
+            user_qry += ','
 
         
     rosters = get_rosters(LEAGUE_ID)
@@ -108,15 +123,15 @@ if __name__ == "__main__":
             if i != len(rosters) - 1 or j != len(data['players']) - 1:
                 roster_player_qry += ','
 
-
     with sqlite3.connect('/Users/jackoconnor/Desktop/Football/sleeper.db') as conn:
         cursor = conn.cursor()
         try:
             # cursor.execute(player_qry)
-            cursor.execute(league_qry)
-            cursor.execute(league_user_qry)
-            cursor.execute(roster_qry)
-            cursor.execute(roster_player_qry)
+            # cursor.execute(league_qry)
+            # cursor.execute(league_user_qry)
+            cursor.execute(user_qry)
+            # cursor.execute(roster_qry)
+            # cursor.execute(roster_player_qry)
             conn.commit()
         finally:
             cursor.close()
