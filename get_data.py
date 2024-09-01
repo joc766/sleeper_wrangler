@@ -142,11 +142,11 @@ if __name__ == "__main__":
     matchups = get_matchups(LEAGUE_ID)
     matchup_qry = 'INSERT INTO Matchup (MatchupID, SleeperMatchupID, LeagueID, RosterID, Week) VALUES'
     for i, data in enumerate(matchups):
-        try:
-            matchup_qry += f'(\'{data["week"]*10+i}\', \'{data["matchup_id"]}\', \'{LEAGUE_ID}\', \'{data["roster_id"]}\', {data["week"]})'
-        except:
-            print(data)
-            exit(1)
+        if data["matchup_id"] is None:
+            data["matchup_id"] = 'NULL'
+        else:
+            data["matchup_id"] = '\'' + str(data["matchup_id"])+'\''
+        matchup_qry += f'(\'{data["week"]*10+i}\', {data["matchup_id"]}, \'{LEAGUE_ID}\', \'{data["roster_id"]}\', {data["week"]})'
         if i != len(matchups)-1:
             matchup_qry += ','
 
