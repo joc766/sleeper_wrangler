@@ -79,17 +79,17 @@ if __name__ == "__main__":
     # create_database(db_name, schema_path)
     # exit(0)
 
-    # all_players= get_players()
-    # player_qry = 'INSERT INTO Player (PlayerID, Team, InjuryStatus, LastName, FirstName) VALUES'
-    # for i,data in enumerate(all_players.values()):
-    #     data['last_name'] = data['last_name'].replace("'", "''")
-    #     data['first_name'] = data['first_name'].replace("'", "''")
-    #     if data['position'] != "DEF":
-    #             player_qry += f'(\'{data["player_id"]}\',\'{data["team"]}\',\'{data["injury_status"]}\',\'{data["last_name"]}\',\'{data["first_name"]}\')'
-    #     else:
-    #         player_qry += f'(\'{data["player_id"]}\',\'{data["team"]}\',\'None\',\'{data["last_name"]}\',\'{data["first_name"]}\')'
-    #     if i != len(all_players) - 1:
-    #         player_qry += ','
+    all_players= get_players()
+    player_qry = 'INSERT INTO Player (PlayerID, Team, Position, InjuryStatus, LastName, FirstName) VALUES'
+    for i,data in enumerate(all_players.values()):
+        data['last_name'] = data['last_name'].replace("'", "''")
+        data['first_name'] = data['first_name'].replace("'", "''")
+        if data['position'] == "DEF" or data['injury_status'] is None:
+            data['injury_status'] = 'Healthy'
+        position = '|'.join(data['fantasy_positions']) if data['fantasy_positions'] is not None else ''
+        player_qry += f'(\'{data["player_id"]}\',\'{data["team"]}\', \'{position}\',\'{data["injury_status"]}\',\'{data["last_name"]}\',\'{data["first_name"]}\')'
+        if i != len(all_players) - 1:
+            player_qry += ','
 
 
     league = get_league(LEAGUE_ID)
@@ -126,10 +126,10 @@ if __name__ == "__main__":
     with sqlite3.connect('/Users/jackoconnor/Desktop/Football/sleeper.db') as conn:
         cursor = conn.cursor()
         try:
-            # cursor.execute(player_qry)
+            cursor.execute(player_qry)
             # cursor.execute(league_qry)
             # cursor.execute(league_user_qry)
-            cursor.execute(user_qry)
+            # cursor.execute(user_qry)
             # cursor.execute(roster_qry)
             # cursor.execute(roster_player_qry)
             conn.commit()
