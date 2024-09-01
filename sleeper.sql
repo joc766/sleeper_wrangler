@@ -45,6 +45,7 @@ CREATE TABLE "Player" (
   "FirstName" TEXT,
   "LastName" TEXT,
   "Team" TEXT,
+  "Position" TEXT,
   "InjuryStatus" TEXT,
   "JSONData" TEXT
 );
