@@ -1,6 +1,7 @@
 CREATE TABLE "User" (
   "UserID" TEXT,
   "UserName" TEXT,
+  "DisplayName" TEXT,
   "JSONData" TEXT
 );
 
