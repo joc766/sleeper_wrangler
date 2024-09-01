@@ -72,6 +72,22 @@ def get_user_data(userID):
 
     return data
 
+def get_matchups(leagueID):
+    matchups = []
+    i = 1
+    while True:
+        url = 'https://api.sleeper.app/v1/league/' + leagueID + '/matchups/' + str(i)
+        response = requests.get(url)
+        response.raise_for_status()
+        data = response.json()
+        if len(data) == 0:
+            break
+        for matchup in data:
+            matchup['week'] = i
+        matchups += data
+        i += 1
+    return matchups
+
 
 if __name__ == "__main__":
     # db_name = 'sleeper.db'
@@ -79,17 +95,17 @@ if __name__ == "__main__":
     # create_database(db_name, schema_path)
     # exit(0)
 
-    all_players= get_players()
-    player_qry = 'INSERT INTO Player (PlayerID, Team, Position, InjuryStatus, LastName, FirstName) VALUES'
-    for i,data in enumerate(all_players.values()):
-        data['last_name'] = data['last_name'].replace("'", "''")
-        data['first_name'] = data['first_name'].replace("'", "''")
-        if data['position'] == "DEF" or data['injury_status'] is None:
-            data['injury_status'] = 'Healthy'
-        position = '|'.join(data['fantasy_positions']) if data['fantasy_positions'] is not None else ''
-        player_qry += f'(\'{data["player_id"]}\',\'{data["team"]}\', \'{position}\',\'{data["injury_status"]}\',\'{data["last_name"]}\',\'{data["first_name"]}\')'
-        if i != len(all_players) - 1:
-            player_qry += ','
+    # all_players= get_players()
+    # player_qry = 'INSERT INTO Player (PlayerID, Team, Position, InjuryStatus, LastName, FirstName) VALUES'
+    # for i,data in enumerate(all_players.values()):
+    #     data['last_name'] = data['last_name'].replace("'", "''")
+    #     data['first_name'] = data['first_name'].replace("'", "''")
+    #     if data['position'] == "DEF" or data['injury_status'] is None:
+    #         data['injury_status'] = 'Healthy'
+    #     position = '|'.join(data['fantasy_positions']) if data['fantasy_positions'] is not None else ''
+    #     player_qry += f'(\'{data["player_id"]}\',\'{data["team"]}\', \'{position}\',\'{data["injury_status"]}\',\'{data["last_name"]}\',\'{data["first_name"]}\')'
+    #     if i != len(all_players) - 1:
+    #         player_qry += ','
 
 
     league = get_league(LEAGUE_ID)
@@ -122,16 +138,28 @@ if __name__ == "__main__":
             roster_player_qry += f'({i*len(data["players"])+j},\'{data["roster_id"]}\',\'{player_id}\',{1 if player_id in starters else 0})'
             if i != len(rosters) - 1 or j != len(data['players']) - 1:
                 roster_player_qry += ','
+    
+    matchups = get_matchups(LEAGUE_ID)
+    matchup_qry = 'INSERT INTO Matchup (MatchupID, SleeperMatchupID, LeagueID, RosterID, Week) VALUES'
+    for i, data in enumerate(matchups):
+        try:
+            matchup_qry += f'(\'{data["week"]*10+i}\', \'{data["matchup_id"]}\', \'{LEAGUE_ID}\', \'{data["roster_id"]}\', {data["week"]})'
+        except:
+            print(data)
+            exit(1)
+        if i != len(matchups)-1:
+            matchup_qry += ','
 
     with sqlite3.connect('/Users/jackoconnor/Desktop/Football/sleeper.db') as conn:
         cursor = conn.cursor()
         try:
-            cursor.execute(player_qry)
+            # cursor.execute(player_qry)
             # cursor.execute(league_qry)
             # cursor.execute(league_user_qry)
             # cursor.execute(user_qry)
             # cursor.execute(roster_qry)
             # cursor.execute(roster_player_qry)
+            cursor.execute(matchup_qry)
             conn.commit()
         finally:
             cursor.close()

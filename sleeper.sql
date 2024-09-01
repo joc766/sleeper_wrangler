@@ -52,8 +52,9 @@ CREATE TABLE "Player" (
 
 CREATE TABLE "Matchup" (
   "MatchupID" INTEGER,
-  "LeagueID" INTEGER,
-  "RosterID" INTEGER,
+  "SleeperMatchupID" TEXT,
+  "LeagueID" TEXT,
+  "RosterID" TEXT,
   "Week" INTEGER
 );
 
