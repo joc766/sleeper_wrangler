@@ -21,8 +21,6 @@ def get_league(leagueid):
 
     data = response.json()
 
-    with open('temp.json', 'w') as f:
-        f.write(json.dumps(data))
     return data
 
 def get_league_users(leagueid):
