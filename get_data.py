@@ -2,7 +2,12 @@ import requests
 import sqlite3
 import json
 
-LEAGUE_ID = '990267272524541952'
+LEAGUE_ID = '1120774194318479360'
+# Old to New:
+# 868563615295410176
+# 990267272524541952
+# 1120774194318479360
+
 
 def create_database(db_name, schema_path):
 
@@ -40,6 +45,8 @@ def get_league(leagueid):
 
     data = response.json()
 
+    with open('temp.json', 'w') as f:
+        f.write(json.dumps(data))
     return data
 
 def get_league_users(leagueid):
@@ -49,7 +56,6 @@ def get_league_users(leagueid):
     response.raise_for_status()
 
     data = response.json()
-
     return data
 
 def get_rosters(leagueid):
@@ -86,12 +92,14 @@ def get_matchups(leagueID):
             matchup['week'] = i
         matchups += data
         i += 1
+    with open('refs/my-matchups.json', 'w') as f:
+        json.dump(matchups, f)
     return matchups
 
 
 if __name__ == "__main__":
-    # db_name = 'sleeper.db'
-    # schema_path = '/Users/jackoconnor/Desktop/Football/sleeper.sql'
+    # db_name = '/Users/jackoconnor/Desktop/Football/sleeper.db'
+    # schema_path = '/Users/jackoconnor/Desktop/Football/wrangler/sleeper.sql'
     # create_database(db_name, schema_path)
     # exit(0)
 
@@ -109,60 +117,85 @@ if __name__ == "__main__":
 
 
     league = get_league(LEAGUE_ID)
-    league_qry = 'INSERT INTO League (LeagueID, Season, JSONData, Previous_League_ID, Name, DraftID) ' 
-    league_qry = f'VALUES (\'{league["league_id"]}\',\'{league["season"]}\',\'{json.dumps(league)}\',\'{league["previous_league_id"]}\',\'{league["name"]}\',\'{league["draft_id"]}\')'
-
+    league_qry = 'INSERT INTO League (LeagueID, Season, JSONData, Previous_League_ID, Name, DraftID) VALUES ' 
+    league_qry += f'(\'{league["league_id"]}\',\'{league["season"]}\',\'{json.dumps(league)}\',\'{league["previous_league_id"]}\',\'{league["name"]}\',\'{league["draft_id"]}\')'
 
     league_users = get_league_users(LEAGUE_ID)
-    league_user_qry = 'INSERT INTO LeagueUser (LeagueUserID, UserID, LeagueID, TeamName, AvatarID) VALUES '
-    user_qry = 'INSERT INTO [User] (UserID, UserName, DisplayName, JSONData) VALUES '
+    team_data = {}
+    user_qry = 'INSERT OR IGNORE INTO [User] (UserID, UserName, DisplayName, JSONData) VALUES '
     for i, data in enumerate(league_users):
-        league_user_qry += f'({i}, \'{data["user_id"]}\',\'{data["league_id"]}\',\'{data["metadata"]["team_name"]}\',\'{data["avatar"]}\')'
+        if not data.get("metadata") or not data["metadata"].get("team_name"): 
+            team_name = ''
+        else:
+            team_name = data["metadata"]["team_name"]
+        team_data[data["user_id"]] = team_name
         user_data = get_user_data(data["user_id"])
         user_qry += f'(\'{user_data["user_id"]}\',\'{user_data["username"]}\',\'{user_data["display_name"]}\',\'{json.dumps(user_data)}\')'
         if i != len(league_users) - 1:
-            league_user_qry += ','
             user_qry += ','
 
         
     rosters = get_rosters(LEAGUE_ID)
-    roster_qry = 'INSERT INTO Roster (RosterID, OwnerID, Record, Streak, Fpts, FptsAgainst) VALUES '
-    roster_player_qry = 'INSERT INTO RosterPlayer (RosterPlayerID, RosterID, PlayerID, Starter) VALUES '
+    teams_qry = 'INSERT INTO Team (UserID, RosterCode, LeagueID, TeamName, Record, Streak, Fpts, FptsAgainst) VALUES '
+    # roster_player_qry = 'INSERT INTO RosterPlayer (RosterPlayerID, RosterID, PlayerID, Starter) VALUES '
     for i, data in enumerate(rosters):
-        roster_qry += f'({data["roster_id"]},\'{data["owner_id"]}\',\'{data["metadata"]["record"]}\',\'{data["metadata"]["streak"]}\',{data["settings"]["fpts"]}, {data["settings"]["fpts_against"]})'
+        if not data.get('owner_id'):
+            team_name = 'unknown'
+            data['owner_id'] = 'unknown'
+        else:
+            team_name = team_data[data['owner_id']]
+        teams_qry += f'(\'{data["owner_id"]}\',\'{data["roster_id"]}\',\'{LEAGUE_ID}\', \'{team_name}\',\'{data["metadata"]["record"]}\',\'{data["metadata"]["streak"]}\',{data["settings"]["fpts"]}, {data["settings"]["fpts_against"]})'
         if i != len(rosters) - 1:
-            roster_qry += ','
+            teams_qry += ','
 
-        starters = set(data['starters'])
-        for j, player_id in enumerate(data['players']):
-            roster_player_qry += f'({i*len(data["players"])+j},\'{data["roster_id"]}\',\'{player_id}\',{1 if player_id in starters else 0})'
-            if i != len(rosters) - 1 or j != len(data['players']) - 1:
-                roster_player_qry += ','
-    
+    #     starters = set(data['starters'])
+    #     for j, player_id in enumerate(data['players']):
+    #         roster_player_qry += f'({i*len(data["players"])+j},\'{data["roster_id"]}\',\'{player_id}\',{1 if player_id in starters else 0})'
+    #         if i != len(rosters) - 1 or j != len(data['players']) - 1:
+    #             roster_player_qry += ','
+
     matchups = get_matchups(LEAGUE_ID)
-    matchup_qry = 'INSERT INTO Matchup (MatchupID, SleeperMatchupID, LeagueID, RosterID, Week) VALUES'
+    
+    matchup_roster_qry = 'INSERT INTO MatchupRoster (LeagueID, MatchupCode, RosterCode, Week, Points) \n VALUES '
     for i, data in enumerate(matchups):
         if data["matchup_id"] is None:
             data["matchup_id"] = 'NULL'
         else:
             data["matchup_id"] = '\'' + str(data["matchup_id"])+'\''
-        matchup_qry += f'(\'{data["week"]*10+i}\', {data["matchup_id"]}, \'{LEAGUE_ID}\', \'{data["roster_id"]}\', {data["week"]})'
-        if i != len(matchups)-1:
-            matchup_qry += ','
+        matchup_roster_qry += f'(\'{LEAGUE_ID}\',{data["matchup_id"]}, {data["roster_id"]}, {data["week"]},{data["points"]})'
+        if i != len(matchups) - 1:
+            matchup_roster_qry += ','
+
+    league_qry += ';'
+    user_qry += ';'
+    teams_qry += ';'
+    matchup_roster_qry += ';'
+    # with open('query.sql', 'w+') as f:
+    #     f.write(league_qry)
+    #     f.write('\n\n')
+        # f.write(teams_qry)
+    #     f.write('\n\n')
+    #     f.write(user_qry)
+    #     f.write('\n\n')
+    #     f.write(matchup_roster_qry)
+        # f.write('\n\n')
+        # f.write(roster_player_qry)
+        # f.write('\n\n')
+    # exit(0)
+
 
     with sqlite3.connect('/Users/jackoconnor/Desktop/Football/sleeper.db') as conn:
         cursor = conn.cursor()
         try:
             # cursor.execute(player_qry)
-            # cursor.execute(league_qry)
-            # cursor.execute(league_user_qry)
-            # cursor.execute(user_qry)
-            # cursor.execute(roster_qry)
-            # cursor.execute(roster_player_qry)
-            cursor.execute(matchup_qry)
+            cursor.execute(league_qry)
+            cursor.execute(user_qry)
+            cursor.execute(teams_qry)
+            cursor.execute(matchup_roster_qry)
             conn.commit()
         finally:
             cursor.close()
+
 
 
 
