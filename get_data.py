@@ -1,28 +1,15 @@
 import sqlite3
 import json
 
-from sleeper_api import get_league, get_league_users, get_matchups, get_players, get_rosters, get_user_data
+from sleeper_api import get_league, get_league_users, get_matchups, get_rosters, get_user_data
 
-LEAGUE_ID = '1120774194318479360'
+LEAGUE_ID = '868563615295410176'
 # Old to New:
 # 868563615295410176
 # 990267272524541952
 # 1120774194318479360
 
 if __name__ == "__main__":
-    # all_players= get_players()
-    # player_qry = 'INSERT INTO Player (PlayerID, Team, Position, InjuryStatus, LastName, FirstName) VALUES'
-    # for i,data in enumerate(all_players.values()):
-    #     data['last_name'] = data['last_name'].replace("'", "''")
-    #     data['first_name'] = data['first_name'].replace("'", "''")
-    #     if data['position'] == "DEF" or data['injury_status'] is None:
-    #         data['injury_status'] = 'Healthy'
-    #     position = '|'.join(data['fantasy_positions']) if data['fantasy_positions'] is not None else ''
-    #     player_qry += f'(\'{data["player_id"]}\',\'{data["team"]}\', \'{position}\',\'{data["injury_status"]}\',\'{data["last_name"]}\',\'{data["first_name"]}\')'
-    #     if i != len(all_players) - 1:
-    #         player_qry += ','
-
-
     #############################
     # LEAGUE
     #############################
