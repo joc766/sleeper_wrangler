@@ -1,6 +1,7 @@
-import requests
 import sqlite3
 import json
+
+from sleeper_api import get_league, get_league_users, get_matchups, get_players, get_rosters, get_user_data
 
 LEAGUE_ID = '1120774194318479360'
 # Old to New:
@@ -8,101 +9,7 @@ LEAGUE_ID = '1120774194318479360'
 # 990267272524541952
 # 1120774194318479360
 
-
-def create_database(db_name, schema_path):
-
-    conn = sqlite3.connect(db_name)
-    cursor = conn.cursor()
-    with open(schema_path, 'r') as file:
-        sql_script = file.read()
-    try:
-        cursor.executescript(sql_script)
-        conn.commit()
-        print("SQLite database has been created successfully.")
-    except Exception as e:
-        print(f"An error occurred: {e}")
-    finally:
-        # Close the connection
-        conn.close()
-
-def get_players():
-    url = 'https://api.sleeper.app/v1/players/nfl'
-    response = requests.get(url)
-    
-    response.raise_for_status()
-
-    data = response.json()
-
-    return data
-
-
-
-def get_league(leagueid):
-    url = 'https://api.sleeper.app/v1/league/' + leagueid
-    response = requests.get(url)
-    
-    response.raise_for_status()
-
-    data = response.json()
-
-    with open('temp.json', 'w') as f:
-        f.write(json.dumps(data))
-    return data
-
-def get_league_users(leagueid):
-    url = 'https://api.sleeper.app/v1/league/' + leagueid + '/users'
-    response = requests.get(url)
-    
-    response.raise_for_status()
-
-    data = response.json()
-    return data
-
-def get_rosters(leagueid):
-    url = 'https://api.sleeper.app/v1/league/' + leagueid + '/rosters'
-    response = requests.get(url)
-    
-    response.raise_for_status()
-
-    data = response.json()
-
-    return data
-
-def get_user_data(userID):
-    url = 'https://api.sleeper.app/v1/user/' + userID
-    response = requests.get(url)
-    
-    response.raise_for_status()
-
-    data = response.json()
-
-    return data
-
-def get_matchups(leagueID):
-    matchups = []
-    i = 1
-    while True:
-        url = 'https://api.sleeper.app/v1/league/' + leagueID + '/matchups/' + str(i)
-        response = requests.get(url)
-        response.raise_for_status()
-        data = response.json()
-        if len(data) == 0:
-            break
-        for matchup in data:
-            matchup['week'] = i
-        matchups += data
-        i += 1
-    with open('refs/my-matchups.json', 'w') as f:
-        json.dump(matchups, f)
-    return matchups
-
-
 if __name__ == "__main__":
-    # db_name = '/Users/jackoconnor/Desktop/Football/sleeper.db'
-    # schema_path = '/Users/jackoconnor/Desktop/Football/wrangler/sleeper.sql'
-    # create_database(db_name, schema_path)
-    # exit(0)
-
     # all_players= get_players()
     # player_qry = 'INSERT INTO Player (PlayerID, Team, Position, InjuryStatus, LastName, FirstName) VALUES'
     # for i,data in enumerate(all_players.values()):
@@ -170,19 +77,6 @@ if __name__ == "__main__":
     user_qry += ';'
     teams_qry += ';'
     matchup_roster_qry += ';'
-    # with open('query.sql', 'w+') as f:
-    #     f.write(league_qry)
-    #     f.write('\n\n')
-        # f.write(teams_qry)
-    #     f.write('\n\n')
-    #     f.write(user_qry)
-    #     f.write('\n\n')
-    #     f.write(matchup_roster_qry)
-        # f.write('\n\n')
-        # f.write(roster_player_qry)
-        # f.write('\n\n')
-    # exit(0)
-
 
     with sqlite3.connect('/Users/jackoconnor/Desktop/Football/sleeper.db') as conn:
         cursor = conn.cursor()
@@ -195,9 +89,3 @@ if __name__ == "__main__":
             conn.commit()
         finally:
             cursor.close()
-
-
-
-
-
-
