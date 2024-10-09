@@ -1,13 +1,10 @@
 -- Drop tables if they exist
--- IF OBJECT_ID('dbo.[User]', 'U') IS NOT NULL DROP TABLE dbo.[User];
--- IF OBJECT_ID('dbo.Player', 'U') IS NOT NULL DROP TABLE dbo.Player;
--- IF OBJECT_ID('dbo.League', 'U') IS NOT NULL DROP TABLE dbo.League;
--- IF OBJECT_ID('dbo.LeagueUser', 'U') IS NOT NULL DROP TABLE dbo.LeagueUser;
--- IF OBJECT_ID('dbo.LeagueRoster', 'U') IS NOT NULL DROP TABLE dbo.LeagueRoster;
--- IF OBJECT_ID('dbo.RosterPlayer', 'U') IS NOT NULL DROP TABLE dbo.RosterPlayer;
--- IF OBJECT_ID('dbo.MatchupWeek', 'U') IS NOT NULL DROP TABLE dbo.MatchupWeek;
--- IF OBJECT_ID('dbo.MatchupRoster', 'U') IS NOT NULL DROP TABLE dbo.MatchupRoster;
--- IF OBJECT_ID('dbo.MatchupRosterPlayer', 'U') IS NOT NULL DROP TABLE dbo.MatchupRosterPlayer;
+IF OBJECT_ID('dbo.MatchupRosterPlayer', 'U') IS NOT NULL DROP TABLE dbo.MatchupRosterPlayer;
+IF OBJECT_ID('dbo.Player', 'U') IS NOT NULL DROP TABLE dbo.Player;
+IF OBJECT_ID('dbo.MatchupRoster', 'U') IS NOT NULL DROP TABLE dbo.MatchupRoster;
+IF OBJECT_ID('dbo.Team', 'U') IS NOT NULL DROP TABLE dbo.Team;
+IF OBJECT_ID('dbo.League', 'U') IS NOT NULL DROP TABLE dbo.League;
+IF OBJECT_ID('dbo.[User]', 'U') IS NOT NULL DROP TABLE dbo.[User];
 
 -- Create the User table
 CREATE TABLE dbo.[User] (
@@ -24,7 +21,7 @@ CREATE TABLE dbo.League (
     JSONData NVARCHAR(MAX),
     Previous_League_ID NVARCHAR(255),
     Name NVARCHAR(255),
-    DraftID INT
+    DraftID NVARCHAR(255)
 );
 
 -- Create the Team table
@@ -47,7 +44,7 @@ CREATE TABLE dbo.Team (
 -- Create the MatchupRoster table
 CREATE TABLE dbo.MatchupRoster (
     MatchupRosterID INT PRIMARY KEY,
-    LeagueID INT,
+    LeagueID VARCHAR(255),
     MatchupCode INT,
     RosterCode INT,
     Week INT,

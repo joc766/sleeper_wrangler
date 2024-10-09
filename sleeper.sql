@@ -1,11 +1,8 @@
+DROP TABLE IF EXISTS "MatchupRoster";
 DROP TABLE IF EXISTS "User";
 DROP TABLE IF EXISTS "Player";
 DROP TABLE IF EXISTS "League";
-DROP TABLE IF EXISTS "LeagueUser";
-DROP TABLE IF EXISTS "LeagueRoster";
-DROP TABLE IF EXISTS "RosterPlayer";
-DROP TABLE IF EXISTS "MatchupWeek";
-DROP TABLE IF EXISTS "MatchupRoster";
+DROP TABLE IF EXISTS "Team";
 DROP TABLE IF EXISTS "MatchupRosterPlayer";
 
 
@@ -23,7 +20,7 @@ CREATE TABLE "League" (
   "JSONData" TEXT,
   "Previous_League_ID" TEXT,
   "Name" TEXT,
-  "DraftID" INTEGER
+  "DraftID" TEXT
 );
 
 CREATE TABLE "Team" (
@@ -44,7 +41,7 @@ CREATE TABLE "Team" (
 
 CREATE TABLE "MatchupRoster" (
   "MatchupRosterID" INTEGER PRIMARY KEY,
-  "LeagueID" INTEGER,
+  "LeagueID" TEXT,
   "MatchupCode" INTEGER,
   "RosterCode" INTEGER,
   "Week" INTEGER,

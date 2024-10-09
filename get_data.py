@@ -68,7 +68,7 @@ if __name__ == "__main__":
     for i, data in enumerate(rosters):
         if not data.get('owner_id'):
             team_name = 'unknown'
-            data['owner_id'] = 'unknown'
+            data['owner_id'] = None
         else:
             team_name = team_data[data['owner_id']]
 
