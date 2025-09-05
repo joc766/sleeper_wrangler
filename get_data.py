@@ -89,8 +89,8 @@ def process_league(league_id, conn):
 
 def main():
     # List of league IDs to process
-    league_ids = ['1120774194318479360', '868563615295410176', '990267272524541952'] # new to old, here for reference
-    latest_league_id = league_ids[0] 
+    # league_ids = ['1120774194318479360', '868563615295410176', '990267272524541952'] # new to old, here for reference
+    latest_league_id = '1120774194318479360'
 
     # Database path
     db_path = '/Users/jackoconnor/Desktop/Football/sleeper.db'
