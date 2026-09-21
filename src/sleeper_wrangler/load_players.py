@@ -1,4 +1,4 @@
-from .sleeper_api import get_players
+from sleeper_wrangler.sleeper_api import get_players
 
 
 def load_players():
@@ -25,4 +25,3 @@ def load_players():
                 first_name,
             )
         )
-

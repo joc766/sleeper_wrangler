@@ -1,7 +1,7 @@
 import json
 import sqlite3
 
-from .sleeper_api import (
+from sleeper_wrangler.sleeper_api import (
     get_draft,
     get_draft_picks,
     get_league,
@@ -158,7 +158,7 @@ def calculate_season_stats(league_id, season, cursor):
     # Get aggregated stats for each roster
     cursor.execute(
         """
-        SELECT 
+        SELECT
             RosterCode,
             SUM(Points) as TotalPoints,
             SUM(PointsAgainst) as TotalPointsAgainst,
@@ -523,7 +523,7 @@ def process_league(league_id, conn):
         # Get the MatchupID for this matchup
         cursor.execute(
             """
-            SELECT MatchupID FROM Matchup 
+            SELECT MatchupID FROM Matchup
             WHERE LeagueID = ? AND Week = ? AND MatchupCode = ?
         """,
             (league_id, matchup_info["week"], matchup_info["matchup_id"]),
