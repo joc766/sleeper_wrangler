@@ -1,0 +1,15 @@
+{
+  "languages": {
+    "SQL": {
+      "language_servers": [
+        "!postgres-language-server"
+      ],
+      "formatter": {
+        "external": {
+          "command": "sql-formatter",
+          "arguments": ["--language", "sqlite"]
+        }
+      }
+    }
+  }
+}
