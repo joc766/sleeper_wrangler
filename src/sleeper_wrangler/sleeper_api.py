@@ -1,6 +1,7 @@
 import json
 
 import requests
+from requests.exceptions import JSONDecodeError
 
 
 def get_players():
@@ -131,3 +132,14 @@ def get_matchups(leagueID):
     with open("refs/my-matchups.json", "w+") as f:
         json.dump(matchups, f)
     return matchups
+
+
+def get_projections(season, week):
+    url = f"https://api.sleeper.app/projections/nfl/{season}/{week}?season_type=regular"
+    response = requests.get(url)
+    response.raise_for_status()
+    try:
+        data = response.json()
+    except JSONDecodeError as e:
+        raise ValueError("JSON for projections did not decode") from e
+    return data
