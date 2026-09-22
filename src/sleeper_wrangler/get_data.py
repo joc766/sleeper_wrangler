@@ -604,8 +604,8 @@ def main():
                     break
 
             # Load players data at the end, limiting to players already referenced in the database
-            print("Loading players data (limited to existing references)...")
-            load_players_data(conn, limit_to_existing=True)
+            # print("Loading players data (limited to existing references)...")
+            # load_players_data(conn, limit_to_existing=True)
 
         except Exception as e:
             print(f"Database error: {e}")
