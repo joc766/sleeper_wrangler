@@ -577,6 +577,10 @@ def process_league(league_id, conn):
     conn.commit()
     return league["previous_league_id"]
 
+def sleeper_connect():
+    db_path = "/Users/jack/.local/share/sleeper/db.sqlite3"
+    return sqlite3.connect(db_path)
+
 
 def main():
     # List of league IDs to process
@@ -584,11 +588,8 @@ def main():
     # latest_league_id = "1219656680917176320"
     latest_league_id = "1384538107809902592"
 
-    # Database path
-    db_path = "/Users/jack/.local/share/sleeper/db.sqlite3"
-
     # Connect to the database and process each league
-    with sqlite3.connect(db_path) as conn:
+    with sleeper_connect() as conn:
         try:
             # Process all leagues first
             curr_league = latest_league_id
