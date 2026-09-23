@@ -36,10 +36,7 @@ def calc_loser_prob(season: str, week: int):
             points = row[3]
             player_id = row[-1]
             if team_rosters.get(username) is None:
-                team_rosters[username] = MatchupRosterData(
-                    Points=points,
-                    Starters=[]
-                )
+                team_rosters[username] = MatchupRosterData(Points=points, Starters=[])
             team_rosters[username].Starters.append(player_id)
             all_players.append(player_id)
 
@@ -82,4 +79,3 @@ def calc_loser_prob(season: str, week: int):
             losses[loser] += 1
 
         print(losses)
-

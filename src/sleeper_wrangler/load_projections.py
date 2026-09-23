@@ -28,12 +28,19 @@ class ProjectionData(NamedTuple):
             PointsHalfPPR=data["stats"].get("pts_half_ppr"),
         )
 
+
 def calc_sigma(data: list[float]) -> float:
     arr = np.array(data, dtype=np.float64)
     std_dev = np.std(arr)
     return std_dev
 
-def simulate(rng: np.random.Generator, sigma: float, proj_pts_half_ppr: float, percent_complete: float): 
+
+def simulate(
+    rng: np.random.Generator,
+    sigma: float,
+    proj_pts_half_ppr: float,
+    percent_complete: float,
+):
     time = 1.0 - percent_complete
     mu_i = proj_pts_half_ppr * time
     sigma_i = sigma * np.sqrt(time)
@@ -42,7 +49,9 @@ def simulate(rng: np.random.Generator, sigma: float, proj_pts_half_ppr: float, p
 
 
 def mock_projections() -> list:
-    with open("/Users/jack/workspace/github.com/joc766/sleeper_wrangler/refs/temp.json", "r") as f:
+    with open(
+        "/Users/jack/workspace/github.com/joc766/sleeper_wrangler/refs/temp.json", "r"
+    ) as f:
         data = json.load(f)
     return data
 
@@ -55,14 +64,15 @@ def process_projections(data: list[dict]):
     cursor = conn.cursor()
 
     try:
-        proj_data = [ProjectionData.from_json(row) for row in data if row["date"] is not None]
+        proj_data = [
+            ProjectionData.from_json(row) for row in data if row["date"] is not None
+        ]
         proj_query = """
-            INSERT OR REPLACE INTO Projections (Date, Season, Week, PlayerID, InjuryStatus, PointsHalfPPR) 
+            INSERT OR REPLACE INTO Projections (Date, Season, Week, PlayerID, InjuryStatus, PointsHalfPPR)
             VALUES (?, ?, ?, ?, ?, ?)
             """
         cursor.executemany(proj_query, proj_data)
         conn.commit()
-
 
     except sqlite3.IntegrityError as e:
         print(f"Integrity error occurred: {e}")
@@ -87,9 +97,8 @@ if __name__ == "__main__":
         for week in range(1, 3):
             line = f"\rLoading {year} week {week}"
             padding = max(0, len(line) - 19)
-            line += (" " * padding)
+            line += " " * padding
             print(line, end="", flush=True)
             data = get_projections(year, week)
             process_projections(data)
             sleep(5)
-
