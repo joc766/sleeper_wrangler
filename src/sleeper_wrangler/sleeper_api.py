@@ -58,14 +58,14 @@ def get_user_data(userID):
     return data
 
 
-def get_draft(draft_id):
+def get_draft(league_id):
     """Get draft information including picks and rounds"""
-    url = "https://api.sleeper.app/v1/draft/" + draft_id
+    url = f"https://api.sleeper.app/v1/league/{league_id}/drafts"
     response = requests.get(url)
 
     response.raise_for_status()
 
-    data = response.json()
+    data = response.json()[0]
     return data
 
 
