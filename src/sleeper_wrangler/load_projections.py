@@ -31,10 +31,12 @@ class ProjectionData(NamedTuple):
 
 def simulate(
     rng: np.random.Generator,
-    sigma: float,
+    sigma: float | None,
     proj_pts_half_ppr: float,
     percent_complete: float,
 ):
+    if sigma is None:
+        sigma = 0.0
     time = 1.0 - percent_complete
     mu_i = proj_pts_half_ppr * time
     sigma_i = sigma * np.sqrt(time)

@@ -3,7 +3,6 @@ from dataclasses import dataclass
 from pprint import pp
 
 import numpy as np
-import numpy.typing as npt
 
 from sleeper_wrangler.get_data import sleeper_connect
 from sleeper_wrangler.load_projections import simulate
@@ -57,6 +56,12 @@ def calc_loser_prob(season: str, week: int):
                     proj.Season = ph.Season AND
                     proj.Week = ph.Week
             WHERE proj.PlayerID IN ({placeholders})
+            AND (
+                CAST(proj.Season AS INT) < {season}
+                OR (
+                    CAST(proj.Season AS INT) = {season} AND proj.Week <= {week}
+                )
+            );
         """
         cursor.execute(proj_query, all_players)
         proj_results = cursor.fetchall()
@@ -74,30 +79,35 @@ def calc_loser_prob(season: str, week: int):
             if row_proj is not None:
                 if row_season == season and row_week == week:
                     weekly_projections[row_player_id] = row_proj
-                if row_actual is not None:
-                    errors_by_player[row_player_id].append(row_actual - row_proj)
+                else:
+                    # don't factor in errors of the week being predicted. All other weeks in proj_results are prior to season, week.
+                    if row_actual is not None:
+                        errors_by_player[row_player_id].append(row_actual - row_proj)
 
         player_sigmas = {
             player_id: np.std(errors) if len(errors) > 0 else 0
             for player_id, errors in errors_by_player.items()
         }
+
         losses = defaultdict(int)
         n_iterations = 100_000
         for i in range(n_iterations):
             scores: dict[str, float] = {
                 # TODO: need percent complete from espn api
                 # TODO: this just sums the projections and does not take into account the current player scores for the week
-                username: mr_data.Points
-                + sum(
+                # once we have the formula for percent complete, add back into the valuers for scores + mr_data.Points
+                username: sum(
                     simulate(
                         rng,
-                        player_sigmas[player_id],
+                        player_sigmas.get(
+                            player_id
+                        ),  # supply None when we have no sigmas (rookie first game/hasn't played since 2021)
                         weekly_projections[player_id],
                         0.0,
                     )
                     for player_id in mr_data.Starters
                     if weekly_projections.get(player_id)
-                    is not None  # don't calculate for players with no projection (injured), assumes a 0
+                    is not None  # don't calculate for players with no projection (injured), assumes a 0.
                 )
                 for username, mr_data in team_rosters.items()
             }
