@@ -1,16 +1,24 @@
 from collections import defaultdict
 from dataclasses import dataclass
+from pprint import pp
 
 import numpy as np
+import numpy.typing as npt
 
 from sleeper_wrangler.get_data import sleeper_connect
-from sleeper_wrangler.load_projections import calc_sigma, simulate
+from sleeper_wrangler.load_projections import simulate
 
 
 @dataclass
 class MatchupRosterData:
     Points: int
     Starters: list[str]
+
+
+@dataclass
+class Game:
+    projected: float
+    actual: float
 
 
 def calc_loser_prob(season: str, week: int):
@@ -42,40 +50,62 @@ def calc_loser_prob(season: str, week: int):
 
         placeholders = ",".join(["?"] * len(all_players))
         proj_query = f"""
-            SELECT PlayerID, Season, Week, PointsHalfPPR FROM Projections
-            WHERE PlayerID IN ({placeholders})
+            SELECT proj.PlayerID, proj.Season, proj.Week, proj.PointsHalfPPR AS 'ProjectedPoints', ph.PtsHalfPPR AS 'ScoredPoints'
+            FROM Projections proj
+                LEFT JOIN PlayerHistory ph ON
+                    proj.PlayerID = ph.PlayerID AND
+                    proj.Season = ph.Season AND
+                    proj.Week = ph.Week
+            WHERE proj.PlayerID IN ({placeholders})
         """
         cursor.execute(proj_query, all_players)
         proj_results = cursor.fetchall()
 
-        all_projections = defaultdict(list)
-        weekly_projections = defaultdict(int)
+        errors_by_player: dict[str, list[float]] = defaultdict(list)
+
+        # TODO: cleanup some of this formatting and put it in the calc_sigma function
+        weekly_projections: dict[str, float] = {}
         for row in proj_results:
             row_player_id = row[0]
             row_season = row[1]
             row_week = row[2]
-            row_pts_half_ppr = row[3]
-            if row_pts_half_ppr is not None:
+            row_proj = row[3]
+            row_actual = row[4]
+            if row_proj is not None:
                 if row_season == season and row_week == week:
-                    weekly_projections[row_player_id] = row_pts_half_ppr
-                all_projections[row_player_id].append(row_pts_half_ppr)
+                    weekly_projections[row_player_id] = row_proj
+                if row_actual is not None:
+                    errors_by_player[row_player_id].append(row_actual - row_proj)
 
         player_sigmas = {
-            player_id: calc_sigma(projections)
-            for player_id, projections in all_projections.items()
+            player_id: np.std(errors) if len(errors) > 0 else 0
+            for player_id, errors in errors_by_player.items()
         }
-
         losses = defaultdict(int)
-        for i in range(10_000):
+        n_iterations = 100_000
+        for i in range(n_iterations):
             scores: dict[str, float] = {
                 # TODO: need percent complete from espn api
-                username: mr_data.Points + sum(
-                    simulate(rng, player_sigmas[player_id], weekly_projections[player_id], 0.0) 
+                # TODO: this just sums the projections and does not take into account the current player scores for the week
+                username: mr_data.Points
+                + sum(
+                    simulate(
+                        rng,
+                        player_sigmas[player_id],
+                        weekly_projections[player_id],
+                        0.0,
+                    )
                     for player_id in mr_data.Starters
+                    if weekly_projections.get(player_id)
+                    is not None  # don't calculate for players with no projection (injured), assumes a 0
                 )
                 for username, mr_data in team_rosters.items()
             }
             loser = min(scores, key=lambda k: scores[k])
             losses[loser] += 1
 
-        print(losses)
+        percents = {
+            username: f"{(losses / n_iterations) * 100:.2f}%"
+            for username, losses in sorted(losses.items(), key=lambda x: x[1])
+        }
+        pp(percents)

@@ -29,12 +29,6 @@ class ProjectionData(NamedTuple):
         )
 
 
-def calc_sigma(data: list[float]) -> float:
-    arr = np.array(data, dtype=np.float64)
-    std_dev = np.std(arr)
-    return std_dev
-
-
 def simulate(
     rng: np.random.Generator,
     sigma: float,

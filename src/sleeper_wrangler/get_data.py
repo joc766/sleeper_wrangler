@@ -602,7 +602,6 @@ def main():
                 except Exception as e:
                     print(f"Error processing league {curr_league}: {e}")
                     raise
-                    break
 
             # Load players data at the end, limiting to players already referenced in the database
             # print("Loading players data (limited to existing references)...")

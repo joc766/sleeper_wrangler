@@ -12,7 +12,7 @@ class PlayerHistory(NamedTuple):
 
 
 def load_player_history():
-    players_query = "SELECT PlayerID FROM Player;"
+    players_query = "SELECT DISTINCT p.PlayerID FROM Player p JOIN MatchupRosterPlayer mrp on p.PlayerID = mrp.PlayerID"
     with sleeper_connect() as conn:
         cursor = conn.cursor()
         cursor.execute(players_query)
@@ -23,7 +23,7 @@ def load_player_history():
 
         player_ids = [row[0] for row in results]
         player_histories: list[PlayerHistory] = []
-        for szn in ["2021", "2022", "2023", "2024", "2025", "2026"]:
+        for szn in ["2025"]:
             for i, id in enumerate(player_ids):
                 print(f"Loading history for {szn}: {i}/{len(player_ids)}")
                 data = get_player_history(id, szn)
@@ -38,7 +38,7 @@ def load_player_history():
                         player_histories.append(history)
 
         history_query = """
-            INSERT INTO PlayerHistory (PlayerID, Season, Week, PtsHalfPPR)
+            INSERT OR REPLACE INTO PlayerHistory (PlayerID, Season, Week, PtsHalfPPR)
             VALUES (?, ?, ?, ?)
         """
         cursor.executemany(history_query, player_histories)
