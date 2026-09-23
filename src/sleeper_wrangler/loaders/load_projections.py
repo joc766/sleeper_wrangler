@@ -35,7 +35,7 @@ def mock_projections() -> list:
     return data
 
 
-def process_projections(data: list[dict]):
+def load_projections(data: list[dict]):
     if type(data) != list:
         raise ValueError(f"Received non-list object: {data}")
 
@@ -79,5 +79,5 @@ if __name__ == "__main__":
             line += " " * padding
             print(line, end="", flush=True)
             data = get_projections(year, week)
-            process_projections(data)
+            load_projections(data)
             sleep(5)
