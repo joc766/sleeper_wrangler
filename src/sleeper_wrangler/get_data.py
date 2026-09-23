@@ -1,6 +1,6 @@
 from contextlib import closing
 
-from sleeper_wrangler.connect import sleeper_connect
+from sleeper_wrangler import sleeper_connect
 from sleeper_wrangler.loaders import (
     calculate_season_stats,
     calculate_weekly_stats,

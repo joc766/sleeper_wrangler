@@ -4,7 +4,7 @@ from pprint import pp
 
 import numpy as np
 
-from sleeper_wrangler.get_data import sleeper_connect
+from sleeper_wrangler import sleeper_connect
 
 
 @dataclass

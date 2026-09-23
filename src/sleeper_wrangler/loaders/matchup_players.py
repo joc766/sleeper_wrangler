@@ -1,8 +1,7 @@
-
 import json
 from typing import NamedTuple
 
-from sleeper_wrangler.get_data import sleeper_connect
+from sleeper_wrangler import sleeper_connect
 
 
 class MatchupRosterPlayer(NamedTuple):
@@ -14,7 +13,6 @@ class MatchupRosterPlayer(NamedTuple):
     ProjectedPoints: float | None
     JSONData: str | None
 
-    
 
 def load_matchup_players():
     mr_query = """
@@ -31,10 +29,10 @@ def load_matchup_players():
         cursor.execute(players_query)
         players_results = cursor.fetchall()
 
-        if len(results) == 0 :
+        if len(results) == 0:
             raise ValueError("no matchup rosters returned by query.")
 
-        if len(players_results) == 0 :
+        if len(players_results) == 0:
             raise ValueError("no matchup rosters returned by query.")
 
         players = {row[0]: row[1] for row in players_results}
@@ -53,7 +51,7 @@ def load_matchup_players():
                         Starter=1,
                         Points=points,
                         ProjectedPoints=None,
-                        JSONData=None
+                        JSONData=None,
                     )
                     mr_players.append(mr_player)
 
@@ -63,7 +61,3 @@ def load_matchup_players():
         """
         cursor.executemany(mr_players_query, mr_players)
         conn.commit()
-
-
-
-        

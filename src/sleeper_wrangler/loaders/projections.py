@@ -3,7 +3,7 @@ import sqlite3
 from time import sleep
 from typing import NamedTuple
 
-from sleeper_wrangler.get_data import sleeper_connect
+from sleeper_wrangler import sleeper_connect
 from sleeper_wrangler.sleeper_api import get_projections
 
 

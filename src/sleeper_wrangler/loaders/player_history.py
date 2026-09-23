@@ -1,6 +1,6 @@
 from typing import NamedTuple
 
-from sleeper_wrangler.get_data import sleeper_connect
+from sleeper_wrangler import sleeper_connect
 from sleeper_wrangler.sleeper_api import get_player_history
 
 
