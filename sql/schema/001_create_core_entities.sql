@@ -5,8 +5,7 @@ CREATE TABLE User (
   DisplayName TEXT,
   Avatar TEXT,
   JSONData TEXT,
-
-  UNIQUE(UserName)
+  UNIQUE (UserName)
 );
 
 CREATE TABLE League (
@@ -37,20 +36,24 @@ CREATE TABLE Team (
   Losses INTEGER DEFAULT 0,
   Ties INTEGER DEFAULT 0,
   JSONData TEXT,
-
-  UNIQUE(UserID, LeagueID),
-  UNIQUE(LeagueID, Season, RosterCode),
-  FOREIGN KEY (UserID) REFERENCES User(UserID),
-  FOREIGN KEY (LeagueID) REFERENCES League(LeagueID)
+  UNIQUE (UserID, LeagueID),
+  UNIQUE (LeagueID, Season, RosterCode),
+  FOREIGN KEY (UserID) REFERENCES User (UserID),
+  FOREIGN KEY (LeagueID) REFERENCES League (LeagueID)
 );
 
-CREATE INDEX idx_league_season_status ON League(Season, Status);
-CREATE INDEX idx_league_previous ON League(Previous_League_ID);
-CREATE INDEX idx_team_league_season ON Team(LeagueID, Season);
-CREATE INDEX idx_team_season_points ON Team(Season, Fpts);
+CREATE INDEX idx_league_season_status ON League (Season, Status);
+
+CREATE INDEX idx_league_previous ON League (Previous_League_ID);
+
+CREATE INDEX idx_team_league_season ON Team (LeagueID, Season);
+
+CREATE INDEX idx_team_season_points ON Team (Season, Fpts);
 
 -- +goose Down
 -- Dropping tables also removes their indexes.
 DROP TABLE Team;
+
 DROP TABLE League;
+
 DROP TABLE User;

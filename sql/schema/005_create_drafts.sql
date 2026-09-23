@@ -9,9 +9,8 @@ CREATE TABLE Draft (
   EndTime DATETIME,
   Settings TEXT, -- JSON for draft settings
   JSONData TEXT,
-
-  UNIQUE(LeagueID, Season),
-  FOREIGN KEY (LeagueID) REFERENCES League(LeagueID)
+  UNIQUE (LeagueID, Season),
+  FOREIGN KEY (LeagueID) REFERENCES League (LeagueID)
 );
 
 CREATE TABLE DraftPick (
@@ -25,16 +24,18 @@ CREATE TABLE DraftPick (
   PlayerID TEXT NOT NULL,
   PickTime DATETIME,
   JSONData TEXT,
-
-  UNIQUE(DraftID, Round, Pick),
-  FOREIGN KEY (DraftID) REFERENCES Draft(DraftID),
-  FOREIGN KEY (PlayerID) REFERENCES Player(PlayerID)
+  UNIQUE (DraftID, Round, Pick),
+  FOREIGN KEY (DraftID) REFERENCES Draft (DraftID),
+  FOREIGN KEY (PlayerID) REFERENCES Player (PlayerID)
 );
 
-CREATE INDEX idx_draft_season_status ON Draft(Season, Status);
-CREATE INDEX idx_draft_pick_league_season_roster ON DraftPick(LeagueID, Season, RosterCode);
-CREATE INDEX idx_draft_pick_player_season ON DraftPick(PlayerID, Season);
+CREATE INDEX idx_draft_season_status ON Draft (Season, Status);
+
+CREATE INDEX idx_draft_pick_league_season_roster ON DraftPick (LeagueID, Season, RosterCode);
+
+CREATE INDEX idx_draft_pick_player_season ON DraftPick (PlayerID, Season);
 
 -- +goose Down
 DROP TABLE DraftPick;
+
 DROP TABLE Draft;

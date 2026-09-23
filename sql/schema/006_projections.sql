@@ -7,8 +7,7 @@ create table Projections (
   PlayerID TEXT NOT NULL,
   InjuryStatus TEXT NULL,
   PointsHalfPPR REAL, -- ok with floating point for now, could convert to hundredths of pts
-  
-  UNIQUE(Season, Week, PlayerID),
+  UNIQUE (Season, Week, PlayerID),
   FOREIGN KEY (PlayerID) REFERENCES Player (PlayerID)
 );
 
