@@ -21,12 +21,10 @@ class Game:
 
 def simulate(
     rng: np.random.Generator,
-    sigma: float | None,
+    sigma: float,
     proj_pts_half_ppr: float,
     percent_complete: float,
 ):
-    if sigma is None:
-        sigma = 0.0
     time = 1.0 - percent_complete
     mu_i = proj_pts_half_ppr * time
     sigma_i = sigma * np.sqrt(time)
@@ -114,7 +112,7 @@ def calc_loser_prob(season: str, week: int):
                     simulate(
                         rng,
                         player_sigmas.get(
-                            player_id
+                            player_id, 0.0
                         ),  # supply None when we have no sigmas (rookie first game/hasn't played since 2021)
                         weekly_projections[player_id],
                         0.0,
