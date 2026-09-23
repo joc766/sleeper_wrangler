@@ -237,7 +237,7 @@ def calculate_season_stats(league_id, season, cursor):
         cursor.executemany(season_stats_qry, stats_data)
 
 
-def load_players_data(conn: sqlite3.Connection, limit_to_existing=False):
+def load_players_data(conn: sqlite3.Connection, limit_to_existing=True):
     """
     Load NFL players data into the Player table.
     This should be run once or periodically to keep player data updated.
@@ -576,6 +576,7 @@ def process_league(league_id, conn):
 
     conn.commit()
     return league["previous_league_id"]
+
 
 def sleeper_connect():
     db_path = "/Users/jack/.local/share/sleeper/db.sqlite3"
