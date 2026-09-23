@@ -143,3 +143,15 @@ def get_projections(season: str, week: int) -> list[dict]:
     except JSONDecodeError as e:
         raise ValueError("JSON for projections did not decode") from e
     return data
+
+
+def get_player_history(player_id: str, season: str) -> dict[str, dict]:
+    url = f"https://api.sleeper.com/stats/nfl/player/{player_id}"
+    params = {"season": season, "season_type": "regular", "grouping": "week"}
+    response = requests.get(url, params)
+    response.raise_for_status()
+    try:
+        data = response.json()
+    except JSONDecodeError as e:
+        raise ValueError("JSON for player history did not decode") from e
+    return data
