@@ -5,7 +5,6 @@ from pprint import pp
 import numpy as np
 
 from sleeper_wrangler.get_data import sleeper_connect
-from sleeper_wrangler.load_projections import simulate
 
 
 @dataclass
@@ -18,6 +17,21 @@ class MatchupRosterData:
 class Game:
     projected: float
     actual: float
+
+
+def simulate(
+    rng: np.random.Generator,
+    sigma: float | None,
+    proj_pts_half_ppr: float,
+    percent_complete: float,
+):
+    if sigma is None:
+        sigma = 0.0
+    time = 1.0 - percent_complete
+    mu_i = proj_pts_half_ppr * time
+    sigma_i = sigma * np.sqrt(time)
+
+    return rng.normal(loc=mu_i, scale=sigma_i)
 
 
 def calc_loser_prob(season: str, week: int):

@@ -3,8 +3,6 @@ import sqlite3
 from time import sleep
 from typing import NamedTuple
 
-import numpy as np
-
 from sleeper_wrangler.get_data import sleeper_connect
 from sleeper_wrangler.sleeper_api import get_projections
 
@@ -27,21 +25,6 @@ class ProjectionData(NamedTuple):
             InjuryStatus=data["player"]["injury_status"],
             PointsHalfPPR=data["stats"].get("pts_half_ppr"),
         )
-
-
-def simulate(
-    rng: np.random.Generator,
-    sigma: float | None,
-    proj_pts_half_ppr: float,
-    percent_complete: float,
-):
-    if sigma is None:
-        sigma = 0.0
-    time = 1.0 - percent_complete
-    mu_i = proj_pts_half_ppr * time
-    sigma_i = sigma * np.sqrt(time)
-
-    return rng.normal(loc=mu_i, scale=sigma_i)
 
 
 def mock_projections() -> list:
