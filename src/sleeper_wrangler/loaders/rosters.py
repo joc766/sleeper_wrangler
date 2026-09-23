@@ -1,6 +1,7 @@
 import json
 import sqlite3
 
+from sleeper_wrangler.db.league import select_league_season
 from sleeper_wrangler.sleeper_api import get_league_users, get_rosters
 
 
@@ -21,9 +22,7 @@ def parse_record(record_str):
 
 def load_rosters(conn: sqlite3.Connection, league_id: str) -> None:
     rosters = get_rosters(league_id)
-    season = conn.execute(
-        "SELECT Season FROM League WHERE LeagueID = ?", (league_id,)
-    ).fetchone()["Season"]
+    season = select_league_season(conn, league_id)
 
     # TODO: rename Team to Roster and possibly make RosterID a foreign key in MatchupRoster
     # TODO: load players from this roster?

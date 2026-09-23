@@ -1,14 +1,12 @@
 import json
 import sqlite3
 
+from sleeper_wrangler.db.league import select_league_season
 from sleeper_wrangler.sleeper_api import get_matchups
 
 
 def load_matchups(conn: sqlite3.Connection, league_id: str):
-    season: str = conn.execute(
-        "SELECT Season FROM League WHERE LeagueID = ?", (league_id,)
-    ).fetchone()["Season"]
-    # MATCHUPS - Process with new schema
+    season: str = select_league_season(conn, league_id)
     matchups = get_matchups(league_id)
 
     # First, create Matchup records

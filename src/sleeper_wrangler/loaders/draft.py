@@ -1,6 +1,7 @@
 import json
 import sqlite3
 
+from sleeper_wrangler.db import select_league_season
 from sleeper_wrangler.sleeper_api import get_draft, get_draft_picks
 
 
@@ -10,9 +11,7 @@ def load_draft(conn: sqlite3.Connection, league_id: str):
     """
     draft = get_draft(league_id)
     draft_picks = get_draft_picks(draft["draft_id"])
-    season = conn.execute(
-        "SELECT Season FROM League WHERE LeagueID = ?", (league_id,)
-    ).fetchone()["Season"]
+    season = select_league_season(conn, league_id)
 
     # Insert draft record
     draft_qry = """

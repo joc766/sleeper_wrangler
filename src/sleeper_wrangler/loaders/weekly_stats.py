@@ -1,13 +1,13 @@
 import sqlite3
 
+from sleeper_wrangler.db.league import select_league_season
+
 
 def calculate_weekly_stats(conn: sqlite3.Connection, league_id: str):
     """
     Calculate and insert weekly stats from matchup data.
     """
-    season = conn.execute(
-        "SELECT Season FROM League WHERE LeagueID = ?", (league_id,)
-    ).fetchone()["Season"]
+    season = select_league_season(conn, league_id)
     # Get all matchup roster data for this league/season
     weekly_data = conn.execute(
         """
