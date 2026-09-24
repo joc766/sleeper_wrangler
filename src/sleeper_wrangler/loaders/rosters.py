@@ -2,6 +2,7 @@ import json
 import sqlite3
 
 from sleeper_wrangler.db.league import select_league_season
+from sleeper_wrangler.db.roster import CreateRosterParms, create_rosters
 from sleeper_wrangler.sleeper_api import get_league_users, get_rosters
 
 
@@ -24,60 +25,35 @@ def load_rosters(conn: sqlite3.Connection, league_id: str) -> None:
     rosters = get_rosters(league_id)
     season = select_league_season(conn, league_id)
 
-    # TODO: rename Team to Roster and possibly make RosterID a foreign key in MatchupRoster
-    # TODO: load players from this roster?
-    teams_qry = """
-        INSERT OR REPLACE INTO Team (UserID, RosterCode, LeagueID, Season, TeamName, Record, Streak, Fpts, FptsAgainst, Wins, Losses, Ties, JSONData)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    """
-
-    # query Sleeper API for team names
     team_names = {
         user["user_id"]: user["metadata"]["team_name"]
         for user in get_league_users(league_id)
     }
 
     teams_data = []
-    for i, roster in enumerate(rosters):
-        if roster is None:
-            print(f"Warning: Roster at index {i} is None, skipping")
-            continue
-
-        owner_id = roster.get("owner_id")
-        roster_id = roster.get("roster_id")
-
-        if not owner_id or not roster_id:
-            print(
-                f"Warning: Roster at index {i} missing owner_id or roster_id, skipping"
-            )
-            continue
-
-        team_name = team_names.get(owner_id, "unknown")
-        metadata = roster.get("metadata", {}) or {}
-        settings = roster.get("settings", {}) or {}
+    for r in rosters:
+        metadata = r.get("metadata", {})
+        settings = r.get("settings", {})
+        user_id = r.get("owner_id", "removed_user")
+        team_name = team_names.get(user_id, "Removed User's Team")
         record = metadata.get("record", "")
         wins, losses, ties = parse_record(record)
-
         teams_data.append(
-            (
-                owner_id,
-                roster_id,
-                league_id,
-                season,
-                team_name,
-                record,
-                metadata.get("streak"),
-                settings.get("fpts", 0),
-                settings.get("fpts_against", 0),
-                wins,
-                losses,
-                ties,
-                json.dumps(roster),
+            CreateRosterParms(
+                UserID=user_id,
+                RosterCode=r["roster_id"],
+                LeagueID=league_id,
+                Season=season,
+                TeamName=team_name,
+                Record=metadata.get("record", ""),
+                Streak=metadata.get("streak"),
+                Fpts=settings.get("fpts", 0.0),
+                FptsAgainst=settings.get("fpts_against", 0.0),
+                Wins=wins,
+                Losses=losses,
+                Ties=ties,
+                JSONData=json.dumps(r),
             )
         )
 
-    if teams_data:
-        conn.executemany(teams_qry, teams_data)
-        print(f"Successfully processed {len(teams_data)} teams")
-    else:
-        print("Warning: No valid team data to process")
+    create_rosters(conn, teams_data)

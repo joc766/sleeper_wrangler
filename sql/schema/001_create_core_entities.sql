@@ -21,8 +21,8 @@ CREATE TABLE League (
   JSONData TEXT
 );
 
-CREATE TABLE Team (
-  TeamID INTEGER PRIMARY KEY AUTOINCREMENT,
+CREATE TABLE Roster (
+  RosterID INTEGER PRIMARY KEY AUTOINCREMENT,
   RosterCode INTEGER NOT NULL,
   UserID TEXT NOT NULL,
   LeagueID TEXT NOT NULL,
@@ -46,13 +46,13 @@ CREATE INDEX idx_league_season_status ON League (Season, Status);
 
 CREATE INDEX idx_league_previous ON League (Previous_League_ID);
 
-CREATE INDEX idx_team_league_season ON Team (LeagueID, Season);
+CREATE INDEX idx_roster_league_season ON Roster (LeagueID, Season);
 
-CREATE INDEX idx_team_season_points ON Team (Season, Fpts);
+CREATE INDEX idx_roster_season_points ON Roster (Season, Fpts);
 
 -- +goose Down
 -- Dropping tables also removes their indexes.
-DROP TABLE Team;
+DROP TABLE Roster;
 
 DROP TABLE League;
 

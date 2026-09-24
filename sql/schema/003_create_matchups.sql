@@ -15,6 +15,7 @@ CREATE TABLE Matchup (
 CREATE TABLE MatchupRoster (
   MatchupRosterID INTEGER PRIMARY KEY AUTOINCREMENT,
   MatchupID INTEGER NOT NULL,
+  RosterID INTEGER NOT NULL,
   RosterCode INTEGER NOT NULL,
   LeagueID TEXT NOT NULL, -- Denormalized for performance
   Season TEXT NOT NULL, -- Denormalized for performance
@@ -26,7 +27,8 @@ CREATE TABLE MatchupRoster (
   UNIQUE (MatchupID, RosterCode),
   UNIQUE (LeagueID, Season, Week, RosterCode),
   FOREIGN KEY (MatchupID) REFERENCES Matchup (MatchupID),
-  FOREIGN KEY (LeagueID) REFERENCES League (LeagueID)
+  FOREIGN KEY (LeagueID) REFERENCES League (LeagueID),
+  FOREIGN KEY (RosterID) REFERENCES Roster (RosterID)
 );
 
 CREATE TABLE MatchupRosterPlayer (
