@@ -1,115 +1,71 @@
 import json
 import sqlite3
+from collections import defaultdict
+from typing import NamedTuple
 
 from sleeper_wrangler.db.league import select_league_season
+from sleeper_wrangler.db.matchup import (
+    InsertMatchupParms,
+    InsertMatchupRosterParms,
+    insert_matchup_rosters,
+    insert_matchups,
+    select_matchups,
+)
+from sleeper_wrangler.db.roster import select_rosters
 from sleeper_wrangler.sleeper_api import get_matchups
+
+
+class MatchupKey(NamedTuple):
+    week: int
+    matchup_id: int
 
 
 def load_matchups(conn: sqlite3.Connection, league_id: str):
     season: str = select_league_season(conn, league_id)
-    matchups = get_matchups(league_id)
-
-    # First, create Matchup records
-    matchup_qry = """
-        INSERT OR REPLACE INTO Matchup (LeagueID, Season, Week, MatchupCode, PlayoffRound, IsPlayoff, JSONData)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
-    """
+    matchups: list[dict] = get_matchups(league_id)
 
     # Group matchups by week and matchup_id to create unique Matchup records
-    matchup_groups = {}
-    for data in matchups:
-        week = data["week"]
-        matchup_id = data.get("matchup_id")
-        key = (week, matchup_id)
+    matchup_rosters_by_key = defaultdict(list)
+    key_func = lambda x: MatchupKey(x["week"], x["matchup_id"])
+    for matchup_week in matchups:
+        for m in matchup_week:
+            matchup_rosters_by_key[key_func(m)].append(m)
 
-        if key not in matchup_groups:
-            # Determine if it's a playoff matchup (typically weeks 15+)
-            is_playoff = 1 if week >= 15 else 0
-            playoff_round = None
-            if is_playoff:
-                playoff_round = week - 14  # Simple playoff round calculation
-
-            matchup_groups[key] = {
-                "week": week,
-                "matchup_id": matchup_id,
-                "is_playoff": is_playoff,
-                "playoff_round": playoff_round,
-                "rosters": [],
-            }
-
-        matchup_groups[key]["rosters"].append(data)
-
-    # Insert Matchup records
-    matchup_data = []
-    for key, matchup_info in matchup_groups.items():
-        # Skip if MatchupCode is None (eliminated teams in playoffs)
-        if matchup_info["matchup_id"] is None:
-            print(
-                f"Warning: Skipping matchup with None MatchupCode for week {matchup_info['week']}"
-            )
-            continue
-
-        matchup_data.append(
-            (
-                league_id,
-                season,
-                matchup_info["week"],
-                matchup_info["matchup_id"],
-                matchup_info["playoff_round"],
-                matchup_info["is_playoff"],
-                json.dumps(matchup_info),
-            )
+    matchup_rows: list[InsertMatchupParms] = [
+        InsertMatchupParms(
+            LeagueID=league_id,
+            Season=season,
+            Week=week,
+            MatchupCode=matchup_id,
+            IsPlayoff=1 if week >= 15 else 0,
+            PlayoffRound=week - 14,
+            JSONData=json.dumps(matchup_rosters),
         )
-    conn.executemany(matchup_qry, matchup_data)
+        for (week, matchup_id), matchup_rosters in matchup_rosters_by_key.items()
+    ]
+    insert_matchups(conn, matchup_rows)
 
-    # Now create MatchupRoster records
-    matchup_roster_qry = """
-        INSERT OR REPLACE INTO MatchupRoster (MatchupID, RosterCode, LeagueID, Season, Week, Points, ProjectedPoints, IsWinner, JSONData)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    """
 
+def load_matchup_rosters(conn: sqlite3.Connection, league_id: str):
+    rosters_by_code = {
+        r.RosterCode: r.RosterID for r in select_rosters(conn, league_id)
+    }
     matchup_roster_data = []
-    for key, matchup_info in matchup_groups.items():
-        # Get the MatchupID for this matchup
-        try:
-            matchup_id = conn.execute(
-                """
-                SELECT MatchupID FROM Matchup
-                WHERE LeagueID = ? AND Week = ? AND MatchupCode = ?
-            """,
-                (league_id, matchup_info["week"], matchup_info["matchup_id"]),
-            ).fetchone()["MatchupID"]
-        except KeyError:
-            print(f"error finding matchupID for {matchup_info['matchup_id']}")
-            continue
 
-        # Process each roster in the matchup
-        rosters = matchup_info["rosters"]
-        points_list = [r["points"] for r in rosters if r["points"] is not None]
-
-        for roster in rosters:
-            # Determine winner (highest points wins)
-            is_winner = 0
-            if roster["points"] is not None and points_list:
-                max_points = max(points_list)
-                if (
-                    roster["points"] == max_points
-                    and len([p for p in points_list if p == max_points]) == 1
-                ):
-                    is_winner = 1
-
-            matchup_roster_data.append(
-                (
-                    matchup_id,
-                    roster["roster_id"],
-                    league_id,
-                    season,
-                    roster["week"],
-                    roster["points"] or 0,
-                    roster.get("projected_points"),
-                    is_winner,
-                    json.dumps(roster),
-                )
+    for m in select_matchups(conn, league_id):
+        rosters: list = json.loads(m.JSONData)
+        matchup_roster_data.extend(
+            InsertMatchupRosterParms(
+                MatchupID=m.MatchupID,
+                RosterCode=r["roster_id"],
+                RosterID=rosters_by_code[r["roster_id"]],
+                LeagueID=league_id,
+                Season=m.Season,
+                Week=m.Week,
+                Points=r["points"],
+                IsWinner=int(r["points"] > rosters[i ^ 1]["points"]),
+                JSONData=json.dumps(r),
             )
-
-    conn.executemany(matchup_roster_qry, matchup_roster_data)
+            for i, r in enumerate(rosters)
+        )
+    insert_matchup_rosters(conn, matchup_roster_data)

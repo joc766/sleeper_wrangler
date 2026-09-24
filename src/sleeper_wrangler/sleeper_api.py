@@ -1,5 +1,3 @@
-import json
-
 import requests
 from requests.exceptions import JSONDecodeError
 
@@ -115,11 +113,10 @@ def get_adp_data():
     return adp_data
 
 
-def get_matchups(leagueID):
+def get_matchups(leagueID: str) -> list[dict]:
     matchups = []
-    i = 1
-    while True:
-        url = "https://api.sleeper.app/v1/league/" + leagueID + "/matchups/" + str(i)
+    for i in range(1, 19):
+        url = f"https://api.sleeper.app/v1/league/{leagueID}/matchups/{i}"
         response = requests.get(url)
         response.raise_for_status()
         data = response.json()
@@ -127,10 +124,8 @@ def get_matchups(leagueID):
             break
         for matchup in data:
             matchup["week"] = i
-        matchups += data
-        i += 1
-    with open("refs/my-matchups.json", "w+") as f:
-        json.dump(matchups, f)
+        matchups.append(data)
+
     return matchups
 
 
