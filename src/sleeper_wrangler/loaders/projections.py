@@ -1,9 +1,7 @@
 import json
 import sqlite3
-from time import sleep
 from typing import NamedTuple
 
-from sleeper_wrangler import sleeper_connect
 from sleeper_wrangler.sleeper_api import get_projections
 
 
@@ -35,49 +33,17 @@ def mock_projections() -> list:
     return data
 
 
-def load_projections(data: list[dict]):
-    if type(data) != list:
-        raise ValueError(f"Received non-list object: {data}")
-
-    conn = sleeper_connect()
-    cursor = conn.cursor()
-
-    try:
+# is it really necesary to add a db function for this? It's very brief
+# TODO: clean up with db functions and use database to see which weeks/seasons we need projections for
+# Exclude historical weeks if we already have the data as well as future weeks (sleeper endpoint for current week)
+def load_projections(conn: sqlite3.Connection, season: str, week: int):
+    projections = get_projections(season, week)
+    with conn:
         proj_data = [
-            ProjectionData.from_json(row) for row in data if row["date"] is not None
+            ProjectionData.from_json(p) for p in projections if p["date"] is not None
         ]
         proj_query = """
             INSERT OR REPLACE INTO Projections (Date, Season, Week, PlayerID, InjuryStatus, PointsHalfPPR)
             VALUES (?, ?, ?, ?, ?, ?)
             """
-        cursor.executemany(proj_query, proj_data)
-        conn.commit()
-
-    except sqlite3.IntegrityError as e:
-        print(f"Integrity error occurred: {e}")
-        conn.rollback()
-
-    except sqlite3.ProgrammingError as e:
-        print(f"Programming error occurred: {e}")
-        conn.rollback()
-
-    except sqlite3.Error as e:
-        print(f"General database error: {e}")
-        conn.rollback()
-
-    finally:
-        conn.close()
-
-
-if __name__ == "__main__":
-    print("starting...", end="", flush=True)
-    # for year in ["2021", "2022", "2023", "2024", "2025", "2026"]:
-    for year in ["2026"]:
-        for week in range(1, 3):
-            line = f"\rLoading {year} week {week}"
-            padding = max(0, len(line) - 19)
-            line += " " * padding
-            print(line, end="", flush=True)
-            data = get_projections(year, week)
-            load_projections(data)
-            sleep(5)
+        conn.executemany(proj_query, proj_data)
