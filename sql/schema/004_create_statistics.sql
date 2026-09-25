@@ -26,7 +26,7 @@ CREATE TABLE SeasonStats (
   TotalPointsAgainst REAL NOT NULL,
   Wins INTEGER NOT NULL,
   Losses INTEGER NOT NULL,
-  Ties INTEGER NOT NULL,
+  "Ties" INTEGER NOT NULL,
   WinPercentage REAL NOT NULL,
   PointsPerGame REAL NOT NULL,
   PointsAgainstPerGame REAL NOT NULL,

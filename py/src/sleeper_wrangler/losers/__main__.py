@@ -29,10 +29,13 @@ conn = sleeper_connect()
 
 league_id = select_leagueid_from_season(conn, season)
 
-timeit(load_matchups)(conn, league_id, week)
-timeit(load_matchup_rosters)(conn, league_id, week)
-timeit(load_matchup_players)(conn, league_id, week)
+# timeit(load_matchups)(conn, league_id, week)
+# timeit(load_matchup_rosters)(conn, league_id, week)
+# timeit(load_matchup_players)(conn, league_id, week)
+load_matchups(conn, league_id, week)
+load_matchup_rosters(conn, league_id, week)
+load_matchup_players(conn, league_id, week)
 
-loser_probs = timeit(calc_loser_probs)(season, week)
+loser_probs = calc_loser_probs(season, week)
 
 print(loser_probs)

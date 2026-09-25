@@ -34,7 +34,7 @@ CREATE TABLE Roster (
   FptsAgainst REAL DEFAULT 0,
   Wins INTEGER DEFAULT 0,
   Losses INTEGER DEFAULT 0,
-  Ties INTEGER DEFAULT 0,
+  "Ties" INTEGER DEFAULT 0,
   JSONData TEXT,
   UNIQUE (UserID, LeagueID),
   UNIQUE (LeagueID, Season, RosterCode),
