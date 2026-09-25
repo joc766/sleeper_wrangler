@@ -1,16 +1,23 @@
 from collections import defaultdict
 from dataclasses import dataclass
 from pprint import pp
+from typing import NamedTuple
 
 import numpy as np
 
 from sleeper_wrangler import sleeper_connect
+from sleeper_wrangler.espn_api import get_game_statuses
+
+
+class Player(NamedTuple):
+    PlayerID: str
+    TeamAbbr: str
 
 
 @dataclass
 class MatchupRosterData:
     Points: int
-    Starters: list[str]
+    Starters: list[Player]
 
 
 @dataclass
@@ -32,17 +39,19 @@ def simulate(
     return rng.normal(loc=mu_i, scale=sigma_i)
 
 
+# TODO: don't use cursor
 def calc_loser_prob(season: str, week: int):
     rng = np.random.default_rng()
     with sleeper_connect() as conn:
         cursor = conn.cursor()
         teams_query = """
-            SELECT u.UserName, r.TeamName, mr.MatchupRosterID, mr.Points, mrp.PlayerID
+            SELECT u.UserName, r.TeamName, mr.MatchupRosterID, mr.Points, mrp.PlayerID, p.Team AS 'PlayerTeam'
             FROM User AS u
                 JOIN Roster AS r on r.UserID = u.UserID
                 JOIN League AS l on r.LeagueID = l.LeagueID
                 JOIN MatchupRoster AS mr ON mr.RosterCode = r.RosterCode and mr.Season = r.Season and mr.LeagueID = r.LeagueID
-                JOIN MatchupRosterPlayer AS mrp on mrp.MatchupRosterID = mr.MatchupRosterID
+                JOIN MatchupRosterPlayer AS mrp ON mrp.MatchupRosterID = mr.MatchupRosterID
+                JOIN Player p ON mrp.PlayerID = p.PlayerID
             WHERE l.Season = ?
             AND mr.Week = ?;
         """
@@ -51,12 +60,13 @@ def calc_loser_prob(season: str, week: int):
         team_rosters = {}
         all_players = []
         for row in matchup_results:
-            username = row[0]
-            points = row[3]
-            player_id = row[-1]
+            username = row["UserName"]
+            points = row["Points"]
+            player_id = row["PlayerID"]
+            team_abbr = row["PlayerTeam"]
             if team_rosters.get(username) is None:
                 team_rosters[username] = MatchupRosterData(Points=points, Starters=[])
-            team_rosters[username].Starters.append(player_id)
+            team_rosters[username].Starters.append(Player(player_id, team_abbr))
             all_players.append(player_id)
 
         placeholders = ",".join(["?"] * len(all_players))
@@ -100,7 +110,7 @@ def calc_loser_prob(season: str, week: int):
             player_id: np.std(errors) if len(errors) > 0 else 0
             for player_id, errors in errors_by_player.items()
         }
-
+        completion_by_team = get_game_statuses()
         losses = defaultdict(int)
         n_iterations = 100_000
         for i in range(n_iterations):
@@ -108,16 +118,17 @@ def calc_loser_prob(season: str, week: int):
                 # TODO: need percent complete from espn api
                 # TODO: this just sums the projections and does not take into account the current player scores for the week
                 # once we have the formula for percent complete, add back into the valuers for scores + mr_data.Points
-                username: sum(
+                username: mr_data.Points
+                + sum(
                     simulate(
                         rng,
                         player_sigmas.get(
                             player_id, 0.0
                         ),  # supply None when we have no sigmas (rookie first game/hasn't played since 2021)
                         weekly_projections[player_id],
-                        0.0,
+                        completion_by_team[team_abbr],
                     )
-                    for player_id in mr_data.Starters
+                    for player_id, team_abbr in mr_data.Starters
                     if weekly_projections.get(player_id)
                     is not None  # don't calculate for players with no projection (injured), assumes a 0.
                 )
