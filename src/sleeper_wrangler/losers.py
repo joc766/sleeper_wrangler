@@ -37,11 +37,11 @@ def calc_loser_prob(season: str, week: int):
     with sleeper_connect() as conn:
         cursor = conn.cursor()
         teams_query = """
-            SELECT u.UserName, t.TeamName, mr.MatchupRosterID, mr.Points, mrp.PlayerID
+            SELECT u.UserName, r.TeamName, mr.MatchupRosterID, mr.Points, mrp.PlayerID
             FROM User AS u
-                JOIN Team AS t on t.UserID = u.UserID
-                JOIN League AS l on t.LeagueID = l.LeagueID
-                JOIN MatchupRoster AS mr ON mr.RosterCode = t.RosterCode and mr.Season = t.Season and mr.LeagueID = t.LeagueID
+                JOIN Roster AS r on r.UserID = u.UserID
+                JOIN League AS l on r.LeagueID = l.LeagueID
+                JOIN MatchupRoster AS mr ON mr.RosterCode = r.RosterCode and mr.Season = r.Season and mr.LeagueID = r.LeagueID
                 JOIN MatchupRosterPlayer AS mrp on mrp.MatchupRosterID = mr.MatchupRosterID
             WHERE l.Season = ?
             AND mr.Week = ?;
