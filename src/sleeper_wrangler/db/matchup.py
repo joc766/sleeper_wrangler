@@ -48,13 +48,14 @@ def insert_matchups(conn: sqlite3.Connection, data: list[InsertMatchupParms]):
         conn.executemany(matchup_qry, data)
 
 
-def select_matchups(conn: sqlite3.Connection, league_id: str):
+def select_matchups(conn: sqlite3.Connection, league_id: str, week: int):
     matchup_qry = """
     SELECT MatchupID, LeagueID, Season, Week, MatchupCode, PlayoffRound, IsPlayoff, JSONData
-    FROM Matchup WHERE LeagueID = ?;
+    FROM Matchup WHERE LeagueID = ? AND Week = ?;
     """
     return [
-        Matchup.from_row(m) for m in conn.execute(matchup_qry, (league_id,)).fetchall()
+        Matchup.from_row(m)
+        for m in conn.execute(matchup_qry, (league_id, week)).fetchall()
     ]
 
 

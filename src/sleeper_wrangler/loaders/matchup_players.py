@@ -1,7 +1,6 @@
 import json
+import sqlite3
 from typing import NamedTuple
-
-from sleeper_wrangler import sleeper_connect
 
 
 class MatchupRosterPlayer(NamedTuple):
@@ -14,20 +13,18 @@ class MatchupRosterPlayer(NamedTuple):
     JSONData: str | None
 
 
-def load_matchup_players():
+def load_matchup_players(conn: sqlite3.Connection, league_id: str, week: int):
     mr_query = """
-        SELECT MatchupRosterID, JSONData FROM MatchupRoster;
-"""
+        SELECT MatchupRosterID, JSONData FROM MatchupRoster WHERE LeagueID = ? AND Week = ?;
+    """
 
     players_query = """
         SELECT PlayerID, Position FROM Player;
     """
-    with sleeper_connect() as conn:
-        cursor = conn.cursor()
-        cursor.execute(mr_query)
-        results = cursor.fetchall()
-        cursor.execute(players_query)
-        players_results = cursor.fetchall()
+    # TODO: load all players, not just starters
+    with conn:
+        results = conn.execute(mr_query, (league_id, week)).fetchall()
+        players_results = conn.execute(players_query).fetchall()
 
         if len(results) == 0:
             raise ValueError("no matchup rosters returned by query.")
@@ -35,7 +32,7 @@ def load_matchup_players():
         if len(players_results) == 0:
             raise ValueError("no matchup rosters returned by query.")
 
-        players = {row[0]: row[1] for row in players_results}
+        positions_by_playerid = {row[0]: row[1] for row in players_results}
 
         mr_players = []
         for row in results:
@@ -43,7 +40,7 @@ def load_matchup_players():
             data = json.loads(row[1])
             for player_id, points in zip(data["starters"], data["starters_points"]):
                 if player_id != "0":
-                    position = players[player_id]
+                    position = positions_by_playerid[player_id]
                     mr_player = MatchupRosterPlayer(
                         MatchupRosterID=mr_id,
                         PlayerID=player_id,
@@ -59,5 +56,4 @@ def load_matchup_players():
             INSERT OR REPLACE INTO MatchupRosterPlayer (MatchupRosterID, PlayerID, Position, Starter, Points, ProjectedPoints, JSONData)
             VALUES (?, ?, ?, ?, ?, ?, ?);
         """
-        cursor.executemany(mr_players_query, mr_players)
-        conn.commit()
+        conn.executemany(mr_players_query, mr_players)

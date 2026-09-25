@@ -15,21 +15,14 @@ from sleeper_wrangler.db.roster import select_rosters
 from sleeper_wrangler.sleeper_api import get_matchups
 
 
-class MatchupKey(NamedTuple):
-    week: int
-    matchup_id: int
-
-
-def load_matchups(conn: sqlite3.Connection, league_id: str):
+def load_matchups(conn: sqlite3.Connection, league_id: str, week: int):
     season: str = select_league_season(conn, league_id)
-    matchups: list[dict] = get_matchups(league_id)
+    matchups: list[dict] = get_matchups(league_id, week)
 
-    # Group matchups by week and matchup_id to create unique Matchup records
+    # Group matchups by matchup_id to create unique Matchup records
     matchup_rosters_by_key = defaultdict(list)
-    key_func = lambda x: MatchupKey(x["week"], x["matchup_id"])
-    for matchup_week in matchups:
-        for m in matchup_week:
-            matchup_rosters_by_key[key_func(m)].append(m)
+    for m in matchups:
+        matchup_rosters_by_key[m["matchup_id"]].append(m)
 
     matchup_rows: list[InsertMatchupParms] = [
         InsertMatchupParms(
@@ -41,18 +34,18 @@ def load_matchups(conn: sqlite3.Connection, league_id: str):
             PlayoffRound=week - 14,
             JSONData=json.dumps(matchup_rosters),
         )
-        for (week, matchup_id), matchup_rosters in matchup_rosters_by_key.items()
+        for matchup_id, matchup_rosters in matchup_rosters_by_key.items()
     ]
     insert_matchups(conn, matchup_rows)
 
 
-def load_matchup_rosters(conn: sqlite3.Connection, league_id: str):
+def load_matchup_rosters(conn: sqlite3.Connection, league_id: str, week: int):
     rosters_by_code = {
         r.RosterCode: r.RosterID for r in select_rosters(conn, league_id)
     }
     matchup_roster_data = []
 
-    for m in select_matchups(conn, league_id):
+    for m in select_matchups(conn, league_id, week):
         rosters: list = json.loads(m.JSONData)
         matchup_roster_data.extend(
             InsertMatchupRosterParms(

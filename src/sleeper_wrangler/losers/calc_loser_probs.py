@@ -1,6 +1,5 @@
 from collections import defaultdict
 from dataclasses import dataclass
-from pprint import pp
 from typing import NamedTuple
 
 import numpy as np
@@ -40,7 +39,7 @@ def simulate(
 
 
 # TODO: don't use cursor
-def calc_loser_prob(season: str, week: int):
+def calc_loser_probs(season: str, week: int) -> dict[str, float]:
     rng = np.random.default_rng()
     with sleeper_connect() as conn:
         cursor = conn.cursor()
@@ -112,12 +111,9 @@ def calc_loser_prob(season: str, week: int):
         }
         completion_by_team = get_game_statuses()
         losses = defaultdict(int)
-        n_iterations = 100_000
+        n_iterations = 10_000
         for i in range(n_iterations):
             scores: dict[str, float] = {
-                # TODO: need percent complete from espn api
-                # TODO: this just sums the projections and does not take into account the current player scores for the week
-                # once we have the formula for percent complete, add back into the valuers for scores + mr_data.Points
                 username: mr_data.Points
                 + sum(
                     simulate(
@@ -138,7 +134,7 @@ def calc_loser_prob(season: str, week: int):
             losses[loser] += 1
 
         percents = {
-            username: f"{(losses / n_iterations) * 100:.2f}%"
+            username: (losses / n_iterations) * 100
             for username, losses in sorted(losses.items(), key=lambda x: x[1])
         }
-        pp(percents)
+        return percents

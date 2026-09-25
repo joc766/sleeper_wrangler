@@ -28,3 +28,9 @@ def select_league_season(conn: sqlite3.Connection, league_id: str):
     return conn.execute(
         "SELECT Season FROM League WHERE LeagueID = ?", (league_id,)
     ).fetchone()["Season"]
+
+
+def select_leagueid_from_season(conn: sqlite3.Connection, season: str):
+    return conn.execute(
+        "SELECT LeagueID FROM League WHERE Season = ?", (season,)
+    ).fetchone()["LeagueID"]

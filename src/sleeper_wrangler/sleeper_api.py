@@ -1,3 +1,5 @@
+from typing import NamedTuple
+
 import requests
 from requests.exceptions import JSONDecodeError
 
@@ -113,13 +115,10 @@ def get_adp_data():
     return adp_data
 
 
-def get_matchups(leagueID: str) -> list[dict]:
+def get_all_matchups(leagueID: str) -> list[dict]:
     matchups = []
     for i in range(1, 19):
-        url = f"https://api.sleeper.app/v1/league/{leagueID}/matchups/{i}"
-        response = requests.get(url)
-        response.raise_for_status()
-        data = response.json()
+        data = get_matchups(leagueID, i)
         if len(data) == 0:
             break
         for matchup in data:
@@ -127,6 +126,15 @@ def get_matchups(leagueID: str) -> list[dict]:
         matchups.append(data)
 
     return matchups
+
+
+def get_matchups(leagueID: str, week: int) -> list[dict]:
+    url = f"https://api.sleeper.app/v1/league/{leagueID}/matchups/{week}"
+    response = requests.get(url)
+    response.raise_for_status()
+    data = response.json()
+
+    return data
 
 
 def get_projections(season: str, week: int) -> list[dict]:
@@ -149,4 +157,25 @@ def get_player_history(player_id: str, season: str) -> dict[str, dict]:
         data = response.json()
     except JSONDecodeError as e:
         raise ValueError("JSON for player history did not decode") from e
+    return data
+
+
+class NFLState(NamedTuple):
+    week: int
+    season: str
+    season_type: str
+    season_has_scores: bool
+
+    @classmethod
+    def from_json(cls, data):
+        return NFLState(
+            data["week"], data["season"], data["season_type"], data["season_has_scores"]
+        )
+
+
+def get_nfl_state():
+    url = "https://api.sleeper.app/v1/state/nfl"
+    r = requests.get(url)
+    r.raise_for_status()
+    data = NFLState.from_json(r.json())
     return data
