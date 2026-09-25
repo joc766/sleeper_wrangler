@@ -5,6 +5,7 @@ from sleeper_wrangler.db import select_league_season
 from sleeper_wrangler.sleeper_api import get_draft, get_draft_picks
 
 
+# TODO: clean up with db function
 def load_draft(conn: sqlite3.Connection, league_id: str):
     """
     Process draft data and insert into Draft and DraftPick tables.

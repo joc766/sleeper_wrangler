@@ -11,6 +11,8 @@ class PlayerHistory(NamedTuple):
     PtsHalfPPR: float | None
 
 
+# TODO: clean up with db functions
+# TODO: only load as necessary for predictions?
 def load_player_history():
     players_query = "SELECT DISTINCT p.PlayerID FROM Player p JOIN MatchupRosterPlayer mrp on p.PlayerID = mrp.PlayerID"
     with sleeper_connect() as conn:
