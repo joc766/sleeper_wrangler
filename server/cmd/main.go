@@ -4,13 +4,16 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
+	"sync"
 	"syscall"
+	"time"
 
 	"github.com/joc766/sleeper/losers/server/internal/db"
 	"github.com/joc766/sleeper/losers/server/internal/hub"
@@ -28,7 +31,7 @@ func writeEvent(w io.Writer, update hub.Update) error {
 	return err
 }
 
-func handleEvents(db *sql.DB, h *hub.Hub) http.HandlerFunc {
+func handleEvents(ctx context.Context, db *sql.DB, h *hub.Hub) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		flusher, ok := w.(http.Flusher)
 		if !ok {
@@ -40,26 +43,51 @@ func handleEvents(db *sql.DB, h *hub.Hub) http.HandlerFunc {
 		w.Header().Set("Cache-Control", "no-cache")
 		w.Header().Set("Connection", "keep-alive")
 
-		subscriber := make(chan hub.Update)
-		h.Subscribe <- subscriber
+		subscriber := make(chan hub.Update, 1)
+		select {
+		case h.Subscribe <- subscriber:
+		case <-ctx.Done():
+			return
+		case <-r.Context().Done():
+			return
+		}
 		defer func() {
-			h.Unsubscribe <- subscriber
+			select {
+			case h.Unsubscribe <- subscriber:
+			case <-ctx.Done():
+			}
 		}()
 
 		queries := sqlc.New(db)
 		latestUpdateText, err := queries.GetLatestProjection(r.Context())
-		if err != nil {
+		if err != nil && !errors.Is(err, sql.ErrNoRows) {
 			http.Error(w, "error getting latest update", http.StatusInternalServerError)
 			return
 		}
 
-		fmt.Fprintf(w, "data: %s\n\n", latestUpdateText)
+		if err == nil {
+			if _, err := fmt.Fprintf(w, "data: %s\n\n", latestUpdateText); err != nil {
+				return
+			}
+		} else {
+			if _, err := fmt.Fprint(w, ": connected; waiting for simulation\n\n"); err != nil {
+				return
+			}
+		}
 		flusher.Flush()
 		for {
 			select {
+			case <-ctx.Done():
+				return
 			case <-r.Context().Done():
-			case update := <-subscriber:
-				writeEvent(w, update)
+				return
+			case update, ok := <-subscriber:
+				if !ok {
+					return
+				}
+				if err := writeEvent(w, update); err != nil {
+					return
+				}
 				flusher.Flush()
 			}
 		}
@@ -68,9 +96,15 @@ func handleEvents(db *sql.DB, h *hub.Hub) http.HandlerFunc {
 }
 
 func main() {
+	if err := run(); err != nil {
+		log.Fatal(err)
+	}
+}
+
+func run() error {
 	db, err := db.Open("/Users/jack/.local/share/sleeper/db.sqlite3")
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	defer db.Close()
 	subscriberHub := hub.NewHub()
@@ -82,16 +116,44 @@ func main() {
 	)
 	defer cancel()
 
-	go subscriberHub.Run(ctx)
-	go updater.RunUpdater(ctx, subscriberHub.Updates)
+	var workers sync.WaitGroup
+	workers.Go(func() {
+		subscriberHub.Run(ctx)
+	})
+	workers.Go(func() {
+		updater.RunUpdater(ctx, subscriberHub.Updates)
+	})
 
 	mux := http.NewServeMux()
-	mux.HandleFunc("GET /events", handleEvents(db, subscriberHub))
+	mux.HandleFunc("GET /events", handleEvents(ctx, db, subscriberHub))
 
 	server := &http.Server{
 		Addr:    ":8080",
 		Handler: mux,
 	}
 
-	log.Fatal(server.ListenAndServe())
+	serverErrors := make(chan error, 1)
+	go func() {
+		serverErrors <- server.ListenAndServe()
+	}()
+
+	var serveErr error
+	select {
+	case <-ctx.Done():
+	case serveErr = <-serverErrors:
+	}
+	// Restore default signal handling so a second Ctrl+C forces termination.
+	cancel()
+	log.Print("Shutting down API")
+	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer shutdownCancel()
+	shutdownErr := server.Shutdown(shutdownCtx)
+	if shutdownErr != nil {
+		_ = server.Close()
+	}
+	workers.Wait()
+	if serveErr != nil && !errors.Is(serveErr, http.ErrServerClosed) {
+		return serveErr
+	}
+	return shutdownErr
 }

@@ -1,3 +1,5 @@
+import json
+import sys
 import time
 
 from sleeper_wrangler.connect import sleeper_connect
@@ -16,7 +18,7 @@ def timeit(func):
         start_time = time.perf_counter()
         return_val = func(*args, **kwargs)
         end_time = time.perf_counter()
-        print(f"execution time: {end_time - start_time}")
+        print(f"execution time: {end_time - start_time}", file=sys.stderr)
         return return_val
 
     return wrapper
@@ -38,4 +40,4 @@ load_matchup_players(conn, league_id, week)
 
 loser_probs = calc_loser_probs(season, week)
 
-print(loser_probs)
+print(json.dumps(loser_probs))
