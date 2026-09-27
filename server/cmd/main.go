@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"sync"
 	"syscall"
 	"time"
@@ -102,6 +103,16 @@ func main() {
 }
 
 func run() error {
+	frontendDir := os.Getenv("FRONTEND_DIR")
+	if frontendDir == "" {
+		frontendDir = "../frontend"
+	}
+	if info, err := os.Stat(filepath.Join(frontendDir, "index.html")); err != nil {
+		return fmt.Errorf("frontend unavailable; set FRONTEND_DIR to the frontend directory: %w", err)
+	} else if info.IsDir() {
+		return fmt.Errorf("frontend index.html must be a file")
+	}
+
 	db, err := db.Open("/Users/jack/.local/share/sleeper/db.sqlite3")
 	if err != nil {
 		return err
@@ -126,6 +137,7 @@ func run() error {
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /events", handleEvents(ctx, db, subscriberHub))
+	mux.Handle("GET /", http.FileServer(http.Dir(frontendDir)))
 
 	server := &http.Server{
 		Addr:    ":8080",

@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Lowest-score probabilities</title>
+    <link rel="stylesheet" href="/styles.css">
+    <script src="/app.js" defer></script>
+  </head>
+  <body>
+    <main>
+      <h1>Lowest-score probabilities</h1>
+      <div class="stream-info">
+        <p id="connection" role="status">Connecting…</p>
+        <p>Last received: <time id="last-received">—</time></p>
+      </div>
+      <p id="notice" role="status">Waiting for simulation results…</p>
+      <table id="results" hidden>
+        <caption>Highest probability first. Results update automatically.</caption>
+        <thead>
+          <tr><th scope="col">Username</th><th scope="col">Chance of lowest score</th></tr>
+        </thead>
+        <tbody id="users"></tbody>
+      </table>
+      <noscript>Enable JavaScript to receive live simulation results.</noscript>
+    </main>
+  </body>
+</html>
