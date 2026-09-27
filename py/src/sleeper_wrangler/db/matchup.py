@@ -24,6 +24,16 @@ class InsertMatchupRosterParms(NamedTuple):
     JSONData: str | None = None
 
 
+class InsertMRPlayerParms(NamedTuple):
+    MatchupRosterID: int
+    PlayerID: str
+    Position: str
+    Starter: int
+    Points: float | None
+    ProjectedPoints: float | None
+    JSONData: str | None
+
+
 class Matchup(NamedTuple):
     MatchupID: int
     LeagueID: str
@@ -41,8 +51,11 @@ class Matchup(NamedTuple):
 
 def insert_matchups(conn: sqlite3.Connection, data: list[InsertMatchupParms]):
     matchup_qry = """
-        INSERT OR REPLACE INTO Matchup (LeagueID, Season, Week, MatchupCode, PlayoffRound, IsPlayoff, JSONData)
+        INSERT INTO Matchup (LeagueID, Season, Week, MatchupCode, PlayoffRound, IsPlayoff, JSONData)
         VALUES (?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT (LeagueID, Season, Week, MatchupCode)
+        DO UPDATE SET
+            JSONData = excluded.JSONData;
     """
     with conn:
         conn.executemany(matchup_qry, data)
@@ -59,12 +72,43 @@ def select_matchups(conn: sqlite3.Connection, league_id: str, week: int):
     ]
 
 
+def select_matchup_rosters(conn: sqlite3.Connection, league_id: str, week: int):
+    matchup_roster_qry = """
+        SELECT MatchupRosterID, JSONData FROM MatchupRoster WHERE LeagueID = ? AND Week = ?;
+    """
+    with conn:
+        return conn.execute(matchup_roster_qry, (league_id, week)).fetchall()
+
+
 def insert_matchup_rosters(
     conn: sqlite3.Connection, data: list[InsertMatchupRosterParms]
 ):
     matchup_roster_qry = """
-        INSERT OR REPLACE INTO MatchupRoster (MatchupID, RosterID, RosterCode, LeagueID, Season, Week, Points, IsWinner, JSONData)
+        INSERT INTO MatchupRoster (MatchupID, RosterID, RosterCode, LeagueID, Season, Week, Points, IsWinner, JSONData)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT (MatchupID, RosterCode)
+        DO UPDATE SET
+            Points = excluded.Points,
+            IsWinner = excluded.IsWinner,
+            JSONData = excluded.JSONData;
+
     """
     with conn:
         conn.executemany(matchup_roster_qry, data)
+
+
+# TODO: this doesn't account for deleting records that were previously associated. What if a player is dropped from the roster altogether?
+# #ISSUE
+def insert_mr_players(conn: sqlite3.Connection, mr_players: list[InsertMRPlayerParms]):
+    mr_players_query = """
+        INSERT INTO MatchupRosterPlayer (MatchupRosterID, PlayerID, Position, Starter, Points, ProjectedPoints, JSONData)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT (MatchupRosterID, PlayerID)
+        DO UPDATE SET
+            Position = excluded.Position,
+            Starter = excluded.Starter,
+            Points = excluded.Points,
+            ProjectedPoints = excluded.ProjectedPoints,
+            JSONData = excluded.JSONData;
+    """
+    conn.executemany(mr_players_query, mr_players)

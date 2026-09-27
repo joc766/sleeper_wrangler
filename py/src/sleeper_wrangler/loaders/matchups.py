@@ -1,7 +1,6 @@
 import json
 import sqlite3
 from collections import defaultdict
-from typing import NamedTuple
 
 from sleeper_wrangler.db.league import select_league_season
 from sleeper_wrangler.db.matchup import (
