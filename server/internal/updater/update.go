@@ -27,12 +27,12 @@ func runPythonLoserSimulation(ctx context.Context) (hub.Update, error) {
 	cmd.Stderr = &stderr
 
 	if err := cmd.Run(); err != nil {
-		return nil, fmt.Errorf("Python simulation failed: %w; stderr: %s", err, stderr.String())
+		return hub.Update{}, fmt.Errorf("Python simulation failed: %w; stderr: %s", err, stderr.String())
 	}
 
 	var update hub.Update
 	if err := json.Unmarshal(outBuffer.Bytes(), &update); err != nil {
-		return nil, fmt.Errorf("invalid simulation JSON: %w; stdout: %q", err, outBuffer.String())
+		return hub.Update{}, fmt.Errorf("invalid simulation JSON: %w; stdout: %q", err, outBuffer.String())
 	}
 	return update, nil
 }

@@ -23,7 +23,8 @@ func (q *Queries) CreateLoserProjection(ctx context.Context, projectiondata stri
 
 const getLatestProjection = `-- name: GetLatestProjection :one
 SELECT
-  ProjectionData
+  ProjectionData,
+  CreatedAt
 FROM
   LoserProjections
 WHERE
@@ -35,9 +36,14 @@ WHERE
   )
 `
 
-func (q *Queries) GetLatestProjection(ctx context.Context) (string, error) {
+type GetLatestProjectionRow struct {
+	Projectiondata string
+	Createdat      string
+}
+
+func (q *Queries) GetLatestProjection(ctx context.Context) (GetLatestProjectionRow, error) {
 	row := q.db.QueryRowContext(ctx, getLatestProjection)
-	var projectiondata string
-	err := row.Scan(&projectiondata)
-	return projectiondata, err
+	var i GetLatestProjectionRow
+	err := row.Scan(&i.Projectiondata, &i.Createdat)
+	return i, err
 }

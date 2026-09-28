@@ -38,6 +38,7 @@ def simulate(
     return rng.normal(loc=mu_i, scale=sigma_i)
 
 
+# TODO: include users that have a 0% chance still
 # TODO: don't use cursor
 def calc_loser_probs(season: str, week: int) -> dict[str, float]:
     rng = np.random.default_rng()

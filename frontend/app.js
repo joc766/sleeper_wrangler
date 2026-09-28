@@ -1,7 +1,7 @@
 "use strict";
 
 const connection = document.getElementById("connection");
-const lastReceived = document.getElementById("last-received");
+const createdAt = document.getElementById("created-at");
 const notice = document.getElementById("notice");
 const results = document.getElementById("results");
 const users = document.getElementById("users");
@@ -22,10 +22,26 @@ events.onmessage = (event) => {
   try {
     const update = JSON.parse(event.data);
     if (update === null || typeof update !== "object" || Array.isArray(update)) {
-      throw new Error("Expected username-to-percentage data");
+      throw new Error("Expected projection response");
     }
 
-    const entries = Object.entries(update);
+    if (update.projections === null || typeof update.projections !== "object" || Array.isArray(update.projections)) {
+      throw new Error("Expected username-to-percentage data");
+    }
+    if (typeof update.created_at !== "string" || !update.created_at.trim()) {
+      throw new Error("Missing creation time");
+    }
+    // SQLite CURRENT_TIMESTAMP is UTC, but does not include a timezone.
+    const timestamp = update.created_at.trim();
+    const normalizedTimestamp = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}(\.\d+)?$/.test(timestamp)
+      ? `${timestamp.replace(" ", "T")}Z`
+      : timestamp;
+    const created = new Date(normalizedTimestamp);
+    if (Number.isNaN(created.getTime())) {
+      throw new Error("Invalid creation time");
+    }
+
+    const entries = Object.entries(update.projections);
     if (entries.some(([, value]) =>
       typeof value !== "number" || !Number.isFinite(value) || value < 0 || value > 100
     )) {
@@ -63,9 +79,8 @@ events.onmessage = (event) => {
     results.hidden = !hasResults;
     notice.hidden = hasResults;
     notice.textContent = hasResults ? "" : "No probabilities available yet. Waiting for the next simulation…";
-    const now = new Date();
-    lastReceived.dateTime = now.toISOString();
-    lastReceived.textContent = now.toLocaleString();
+    createdAt.dateTime = created.toISOString();
+    createdAt.textContent = created.toLocaleString();
     connection.textContent = "Connected · Live updates";
   } catch {
     notice.hidden = false;

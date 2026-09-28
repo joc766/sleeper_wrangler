@@ -40,4 +40,18 @@ load_matchup_players(conn, league_id, week)
 
 loser_probs = calc_loser_probs(season, week)
 
-print(json.dumps(loser_probs))
+# TODO: add timestamps
+data = json.dumps(loser_probs)
+with conn:
+    responseData = conn.execute(
+        "INSERT INTO LoserProjections (ProjectionData, CreatedAt) VALUES (?, CURRENT_TIMESTAMP) RETURNING ProjectionData, CreatedAt",
+        (data,),
+    ).fetchone()
+
+json_data = json.dumps(
+    {
+        "projections": loser_probs,
+        "created_at": responseData["CreatedAt"],
+    }
+)
+print(json_data)

@@ -4,7 +4,10 @@ import "context"
 
 type UserName = string
 
-type Update map[UserName]float64
+type Update struct {
+	Projections map[UserName]float64 `json:"projections"`
+	CreatedAt   string               `json:"created_at"`
+}
 
 type Hub struct {
 	Updates     chan Update

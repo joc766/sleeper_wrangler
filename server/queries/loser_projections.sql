@@ -1,6 +1,7 @@
 -- name: GetLatestProjection :one
 SELECT
-  ProjectionData
+  ProjectionData,
+  CreatedAt
 FROM
   LoserProjections
 WHERE

@@ -60,14 +60,30 @@ func handleEvents(ctx context.Context, db *sql.DB, h *hub.Hub) http.HandlerFunc 
 		}()
 
 		queries := sqlc.New(db)
-		latestUpdateText, err := queries.GetLatestProjection(r.Context())
-		if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		row, sqlErr := queries.GetLatestProjection(r.Context())
+		if sqlErr != nil && !errors.Is(sqlErr, sql.ErrNoRows) {
 			http.Error(w, "error getting latest update", http.StatusInternalServerError)
 			return
 		}
 
-		if err == nil {
-			if _, err := fmt.Fprintf(w, "data: %s\n\n", latestUpdateText); err != nil {
+		var projectionData map[string]float64
+		if err := json.Unmarshal([]byte(row.Projectiondata), &projectionData); err != nil {
+			http.Error(w, "error unmarshalling projection data", http.StatusInternalServerError)
+			return
+		}
+
+		responseData, err := json.Marshal(hub.Update{
+			Projections: projectionData,
+			CreatedAt:   row.Createdat,
+		})
+
+		if err != nil {
+			http.Error(w, "error marshaling response data", http.StatusInternalServerError)
+			return
+		}
+
+		if sqlErr == nil {
+			if _, err := fmt.Fprintf(w, "data: %s\n\n", responseData); err != nil {
 				return
 			}
 		} else {
