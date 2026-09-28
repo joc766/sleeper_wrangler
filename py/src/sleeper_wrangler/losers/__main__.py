@@ -4,6 +4,7 @@ import time
 
 from sleeper_wrangler.connect import sleeper_connect
 from sleeper_wrangler.db.league import select_leagueid_from_season
+from sleeper_wrangler.espn_api import get_game_statuses
 from sleeper_wrangler.loaders import (
     load_matchup_players,
     load_matchup_rosters,
@@ -38,14 +39,15 @@ load_matchups(conn, league_id, week)
 load_matchup_rosters(conn, league_id, week)
 load_matchup_players(conn, league_id, week)
 
-loser_probs = calc_loser_probs(season, week)
+completion_by_team = get_game_statuses()
+loser_probs = calc_loser_probs(season, week, completion_by_team)
 
-# TODO: add timestamps
+# TODO: move insertion to LoserProjections to server?
 data = json.dumps(loser_probs)
 with conn:
     responseData = conn.execute(
-        "INSERT INTO LoserProjections (ProjectionData, CreatedAt) VALUES (?, CURRENT_TIMESTAMP) RETURNING ProjectionData, CreatedAt",
-        (data,),
+        "INSERT INTO LoserProjections (ProjectionData, CreatedAt, GameStatus) VALUES (?, CURRENT_TIMESTAMP, ?) RETURNING CreatedAt",
+        (data, json.dumps(completion_by_team)),
     ).fetchone()
 
 json_data = json.dumps(

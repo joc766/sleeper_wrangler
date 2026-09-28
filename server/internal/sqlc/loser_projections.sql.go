@@ -11,20 +11,26 @@ import (
 
 const createLoserProjection = `-- name: CreateLoserProjection :exec
 INSERT INTO
-  LoserProjections (ProjectionData, CreatedAt)
+  LoserProjections (ProjectionData, CreatedAt, GameStatus)
 VALUES
-  (?, CURRENT_TIMESTAMP)
+  (?, CURRENT_TIMESTAMP, ?)
 `
 
-func (q *Queries) CreateLoserProjection(ctx context.Context, projectiondata string) error {
-	_, err := q.db.ExecContext(ctx, createLoserProjection, projectiondata)
+type CreateLoserProjectionParams struct {
+	Projectiondata string
+	Gamestatus     interface{}
+}
+
+func (q *Queries) CreateLoserProjection(ctx context.Context, arg CreateLoserProjectionParams) error {
+	_, err := q.db.ExecContext(ctx, createLoserProjection, arg.Projectiondata, arg.Gamestatus)
 	return err
 }
 
 const getLatestProjection = `-- name: GetLatestProjection :one
 SELECT
   ProjectionData,
-  CreatedAt
+  CreatedAt,
+  GameStatus
 FROM
   LoserProjections
 WHERE
@@ -39,11 +45,12 @@ WHERE
 type GetLatestProjectionRow struct {
 	Projectiondata string
 	Createdat      string
+	Gamestatus     interface{}
 }
 
 func (q *Queries) GetLatestProjection(ctx context.Context) (GetLatestProjectionRow, error) {
 	row := q.db.QueryRowContext(ctx, getLatestProjection)
 	var i GetLatestProjectionRow
-	err := row.Scan(&i.Projectiondata, &i.Createdat)
+	err := row.Scan(&i.Projectiondata, &i.Createdat, &i.Gamestatus)
 	return i, err
 }

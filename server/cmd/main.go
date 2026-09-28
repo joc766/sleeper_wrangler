@@ -32,7 +32,7 @@ func writeEvent(w io.Writer, update hub.Update) error {
 	return err
 }
 
-func handleEvents(ctx context.Context, db *sql.DB, h *hub.Hub) http.HandlerFunc {
+func handleEvents(ctx context.Context, queries *sqlc.Queries, h *hub.Hub) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		flusher, ok := w.(http.Flusher)
 		if !ok {
@@ -59,30 +59,27 @@ func handleEvents(ctx context.Context, db *sql.DB, h *hub.Hub) http.HandlerFunc 
 			}
 		}()
 
-		queries := sqlc.New(db)
 		row, sqlErr := queries.GetLatestProjection(r.Context())
 		if sqlErr != nil && !errors.Is(sqlErr, sql.ErrNoRows) {
 			http.Error(w, "error getting latest update", http.StatusInternalServerError)
 			return
 		}
 
-		var projectionData map[string]float64
-		if err := json.Unmarshal([]byte(row.Projectiondata), &projectionData); err != nil {
-			http.Error(w, "error unmarshalling projection data", http.StatusInternalServerError)
-			return
-		}
-
-		responseData, err := json.Marshal(hub.Update{
-			Projections: projectionData,
-			CreatedAt:   row.Createdat,
-		})
-
-		if err != nil {
-			http.Error(w, "error marshaling response data", http.StatusInternalServerError)
-			return
-		}
-
 		if sqlErr == nil {
+			var projectionData map[string]float64
+			if err := json.Unmarshal([]byte(row.Projectiondata), &projectionData); err != nil {
+				http.Error(w, "error unmarshalling projection data", http.StatusInternalServerError)
+				return
+			}
+			responseData, err := json.Marshal(hub.Update{
+				Projections: projectionData,
+				CreatedAt:   row.Createdat,
+			})
+
+			if err != nil {
+				http.Error(w, "error marshaling response data", http.StatusInternalServerError)
+				return
+			}
 			if _, err := fmt.Fprintf(w, "data: %s\n\n", responseData); err != nil {
 				return
 			}
@@ -91,6 +88,7 @@ func handleEvents(ctx context.Context, db *sql.DB, h *hub.Hub) http.HandlerFunc 
 				return
 			}
 		}
+
 		flusher.Flush()
 		for {
 			select {
@@ -129,11 +127,13 @@ func run() error {
 		return fmt.Errorf("frontend index.html must be a file")
 	}
 
-	db, err := db.Open("/Users/jack/.local/share/sleeper/db.sqlite3")
+	database, err := db.Open("/Users/jack/.local/share/sleeper/db.sqlite3")
 	if err != nil {
 		return err
 	}
-	defer db.Close()
+	defer database.Close()
+
+	queries := sqlc.New(database)
 	subscriberHub := hub.NewHub()
 
 	ctx, cancel := signal.NotifyContext(
@@ -148,11 +148,11 @@ func run() error {
 		subscriberHub.Run(ctx)
 	})
 	workers.Go(func() {
-		updater.RunUpdater(ctx, subscriberHub.Updates)
+		updater.RunUpdater(ctx, queries, subscriberHub.Updates)
 	})
 
 	mux := http.NewServeMux()
-	mux.HandleFunc("GET /events", handleEvents(ctx, db, subscriberHub))
+	mux.HandleFunc("GET /events", handleEvents(ctx, queries, subscriberHub))
 	mux.Handle("GET /", http.FileServer(http.Dir(frontendDir)))
 
 	server := &http.Server{

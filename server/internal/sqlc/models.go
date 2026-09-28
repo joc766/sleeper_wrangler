@@ -50,6 +50,7 @@ type Loserprojection struct {
 	Loserprojectionid int64
 	Projectiondata    string
 	Createdat         string
+	Gamestatus        interface{}
 }
 
 type Matchup struct {

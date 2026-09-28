@@ -1,7 +1,8 @@
 -- name: GetLatestProjection :one
 SELECT
   ProjectionData,
-  CreatedAt
+  CreatedAt,
+  GameStatus
 FROM
   LoserProjections
 WHERE
@@ -14,6 +15,6 @@ WHERE
 
 -- name: CreateLoserProjection :exec
 INSERT INTO
-  LoserProjections (ProjectionData, CreatedAt)
+  LoserProjections (ProjectionData, CreatedAt, GameStatus)
 VALUES
-  (?, CURRENT_TIMESTAMP);
+  (?, CURRENT_TIMESTAMP, ?);

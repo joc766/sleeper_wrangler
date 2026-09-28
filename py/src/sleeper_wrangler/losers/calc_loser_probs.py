@@ -40,7 +40,9 @@ def simulate(
 
 # TODO: include users that have a 0% chance still
 # TODO: don't use cursor
-def calc_loser_probs(season: str, week: int) -> dict[str, float]:
+def calc_loser_probs(
+    season: str, week: int, completion_by_team: dict[str, float] | None = None
+) -> dict[str, float]:
     rng = np.random.default_rng()
     with sleeper_connect() as conn:
         cursor = conn.cursor()
@@ -110,7 +112,8 @@ def calc_loser_probs(season: str, week: int) -> dict[str, float]:
             player_id: np.std(errors) if len(errors) > 0 else 0
             for player_id, errors in errors_by_player.items()
         }
-        completion_by_team = get_game_statuses()
+        if completion_by_team is None:
+            completion_by_team = get_game_statuses()
         losses = defaultdict(int)
         n_iterations = 10_000
         for i in range(n_iterations):
