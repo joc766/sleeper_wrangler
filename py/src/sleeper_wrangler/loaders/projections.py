@@ -6,7 +6,7 @@ from sleeper_wrangler.sleeper_api import get_projections
 
 
 class ProjectionData(NamedTuple):
-    Date: str
+    Date: str | None
     Season: str
     Week: int
     PlayerID: str
@@ -33,15 +33,13 @@ def mock_projections() -> list:
     return data
 
 
-# is it really necesary to add a db function for this? It's very brief
+# TODO: account for the league's actual scoring when calculating projections
 # TODO: clean up with db functions and use database to see which weeks/seasons we need projections for
 # Exclude historical weeks if we already have the data as well as future weeks (sleeper endpoint for current week)
 def load_projections(conn: sqlite3.Connection, season: str, week: int):
     projections = get_projections(season, week)
     with conn:
-        proj_data = [
-            ProjectionData.from_json(p) for p in projections if p["date"] is not None
-        ]
+        proj_data = [ProjectionData.from_json(p) for p in projections]
         proj_query = """
             INSERT OR REPLACE INTO Projections (Date, Season, Week, PlayerID, InjuryStatus, PointsHalfPPR)
             VALUES (?, ?, ?, ?, ?, ?)

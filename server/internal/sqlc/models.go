@@ -6,7 +6,6 @@ package sqlc
 
 import (
 	"database/sql"
-	"time"
 )
 
 type Draft struct {
@@ -117,7 +116,7 @@ type Playerhistory struct {
 
 type Projection struct {
 	Projectionid  int64
-	Date          time.Time
+	Date          sql.NullTime
 	Season        string
 	Week          int64
 	Playerid      string

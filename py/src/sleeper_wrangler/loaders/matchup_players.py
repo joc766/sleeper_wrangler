@@ -2,7 +2,7 @@ import json
 import sqlite3
 from typing import NamedTuple
 
-from sleeper_wrangler.db.matchup import insert_mr_players, select_matchup_rosters
+from sleeper_wrangler.db.matchup import refresh_mr_players, select_matchup_rosters
 from sleeper_wrangler.db.player import select_player_positions
 
 
@@ -49,4 +49,4 @@ def load_matchup_players(conn: sqlite3.Connection, league_id: str, week: int):
                 )
                 mr_players.append(mr_player)
 
-    insert_mr_players(conn, mr_players)
+    refresh_mr_players(conn, mr_players)

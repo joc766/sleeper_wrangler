@@ -1,7 +1,7 @@
 -- +goose Up
 create table Projections (
   ProjectionID INTEGER PRIMARY KEY AUTOINCREMENT,
-  Date DATE NOT NULL,
+  Date DATE,
   Season TEXT NOT NULL,
   Week INTEGER NOT NULL,
   PlayerID TEXT NOT NULL,

@@ -97,18 +97,56 @@ def insert_matchup_rosters(
         conn.executemany(matchup_roster_qry, data)
 
 
-# TODO: this doesn't account for deleting records that were previously associated. What if a player is dropped from the roster altogether?
-# #ISSUE
-def insert_mr_players(conn: sqlite3.Connection, mr_players: list[InsertMRPlayerParms]):
-    mr_players_query = """
-        INSERT INTO MatchupRosterPlayer (MatchupRosterID, PlayerID, Position, Starter, Points, ProjectedPoints, JSONData)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
-        ON CONFLICT (MatchupRosterID, PlayerID)
-        DO UPDATE SET
-            Position = excluded.Position,
-            Starter = excluded.Starter,
-            Points = excluded.Points,
-            ProjectedPoints = excluded.ProjectedPoints,
-            JSONData = excluded.JSONData;
-    """
-    conn.executemany(mr_players_query, mr_players)
+def refresh_mr_players(
+    conn: sqlite3.Connection,
+    mr_players: list[InsertMRPlayerParms],
+):
+    if len(mr_players) == 0:
+        return
+
+    with conn:
+        conn.execute("""
+                    CREATE TEMP TABLE IF NOT EXISTS refreshed_players (
+                        matchup_roster_id INTEGER,
+                        player_id TEXT,
+                        PRIMARY KEY (matchup_roster_id, player_id)
+                    )
+                """)
+        conn.execute("""DELETE FROM refreshed_players""")
+
+        conn.executemany(
+            """
+                INSERT INTO refreshed_players (matchup_roster_id, player_id)
+                VALUES (?, ?)
+            """,
+            [(p.MatchupRosterID, p.PlayerID) for p in mr_players],
+        )
+        conn.executemany(
+            """
+                INSERT INTO MatchupRosterPlayer (MatchupRosterID, PlayerID, Position, Starter, Points, ProjectedPoints, JSONData)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT (MatchupRosterID, PlayerID)
+                DO UPDATE SET
+                    Position = excluded.Position,
+                    Starter = excluded.Starter,
+                    Points = excluded.Points,
+                    ProjectedPoints = excluded.ProjectedPoints,
+                    JSONData = excluded.JSONData
+            """,
+            mr_players,
+        )
+        conn.execute(
+            """
+                DELETE FROM MatchupRosterPlayer AS mrp
+                WHERE mrp.MatchupRosterID IN (
+                    SELECT matchup_roster_id
+                    FROM refreshed_players
+                )
+                AND NOT EXISTS (
+                    SELECT 1
+                    FROM refreshed_players AS r
+                    WHERE r.player_id = mrp.PlayerID
+                        AND r.matchup_roster_id = mrp.MatchupRosterID
+                )
+            """
+        )

@@ -28,7 +28,7 @@ class CreateRosterParms(NamedTuple):
 
 
 def select_rosters(conn: sqlite3.Connection, league_id: str):
-    roster_qry = "SELECT RosterID, RosterCode FROM Roster WHERE LeagueID = ?;"
+    roster_qry = "SELECT RosterID, RosterCode FROM Roster WHERE LeagueID = ?"
     return [
         Roster.from_row(row)
         for row in conn.execute(roster_qry, (league_id,)).fetchall()
