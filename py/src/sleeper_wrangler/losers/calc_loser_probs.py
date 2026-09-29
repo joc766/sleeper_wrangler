@@ -1,7 +1,7 @@
 import sqlite3
 from collections import defaultdict
 from dataclasses import dataclass
-from typing import NamedTuple, Tuple
+from typing import NamedTuple
 
 import numpy as np
 
@@ -73,7 +73,7 @@ def load_team_rosters_and_players(
 # TODO: include users that have a 0% chance still
 # TODO: don't use cursor
 def calc_loser_probs(
-    season: str, week: int, completion_by_team: dict[str, float] | None = None
+    season: str, week: int, completion_by_team: dict[str, float]
 ) -> dict[str, float]:
     rng = np.random.default_rng()
     with sleeper_connect() as conn:
@@ -119,8 +119,6 @@ def calc_loser_probs(
             player_id: np.std(errors) if len(errors) > 0 else 0
             for player_id, errors in errors_by_player.items()
         }
-        if completion_by_team is None:
-            completion_by_team = get_game_statuses()
         losses = defaultdict(int)
         n_iterations = 10_000
         for i in range(n_iterations):
@@ -161,7 +159,7 @@ def simulate_v2(
 
 
 def calc_loser_probs_v2(
-    season: str, week: int, completion_by_team: dict[str, float] | None = None
+    season: str, week: int, completion_by_team: dict[str, float]
 ) -> dict[str, float]:
     rng = np.random.default_rng()
     with sleeper_connect() as conn:
@@ -202,9 +200,6 @@ def calc_loser_probs_v2(
         errors_by_position[row["Position"]].append(err_as_pct)
 
     losses = defaultdict(int)
-    if completion_by_team is None:
-        completion_by_team = get_game_statuses()
-
     n_iterations = 10_000
 
     sampled_errors_by_player = {

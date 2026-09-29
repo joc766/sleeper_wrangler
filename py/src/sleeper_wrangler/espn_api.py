@@ -1,13 +1,16 @@
+from datetime import date
+
 import requests
 
 
-def get_game_statuses() -> dict[str, float]:
+def get_game_statuses(wk_start: date, wk_end: date) -> dict[str, float]:
     """
     Returns dictionary of team abbreviations as keys
     and float of percent complete as values.
     """
     abbr_corrections = {"WSH": "WAS"}
-    url = "https://site.web.api.espn.com/apis/fantasy/v2/games/ffl/games"
+    date_format = "%Y%m%d"
+    url = f"https://site.web.api.espn.com/apis/fantasy/v2/games/ffl/games?dates={wk_start.strftime(date_format)}-{wk_end.strftime(date_format)}"
     r = requests.get(url)
     r.raise_for_status()
     data = r.json()

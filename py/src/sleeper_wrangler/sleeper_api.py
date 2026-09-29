@@ -1,3 +1,4 @@
+from datetime import date, datetime
 from typing import NamedTuple
 
 import requests
@@ -165,11 +166,17 @@ class NFLState(NamedTuple):
     season: str
     season_type: str
     season_has_scores: bool
+    season_start_date: date
 
     @classmethod
     def from_json(cls, data):
+        date_format = "%Y-%m-%d"
         return NFLState(
-            data["week"], data["season"], data["season_type"], data["season_has_scores"]
+            data["week"],
+            data["season"],
+            data["season_type"],
+            data["season_has_scores"],
+            datetime.strptime(data["season_start_date"], date_format).date(),
         )
 
 
