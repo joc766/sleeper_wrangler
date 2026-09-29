@@ -152,14 +152,12 @@ def calc_loser_probs(
 
 
 def simulate_v2(
-    rng: np.random.Generator,
-    error_pcts: list[float],
+    error_pct: float,
     proj_pts_half_ppr: float,
     percent_complete: float,
 ) -> float:
     time = 1.0 - percent_complete
-    err_pct = rng.choice(error_pcts)
-    return proj_pts_half_ppr * time + proj_pts_half_ppr * np.sqrt(time) * err_pct
+    return proj_pts_half_ppr * time + proj_pts_half_ppr * np.sqrt(time) * error_pct
 
 
 def calc_loser_probs_v2(
@@ -209,14 +207,20 @@ def calc_loser_probs_v2(
 
     n_iterations = 10_000
 
+    sampled_errors_by_player = {
+        player_id: rng.choice(
+            np.asarray(errors_by_position[position]), size=n_iterations
+        )
+        for player_id, (position, _) in wk_pos_proj_by_plyr.items()
+    }
+
     # ISSUE: not getting errors_by_position correctly
     for i in range(n_iterations):
         scores: dict[str, float] = {
             username: mr_data.Points
             + sum(
                 simulate_v2(
-                    rng,
-                    errors_by_position[wk_pos_proj_by_plyr[player_id][0]],
+                    sampled_errors_by_player[player_id][i],
                     wk_pos_proj_by_plyr[player_id][1],
                     completion_by_team[team_abbr],
                 )
