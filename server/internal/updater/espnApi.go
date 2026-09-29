@@ -12,7 +12,7 @@ type Competitor struct {
 type Event struct {
 	ID              string       `json:"id"`
 	Competitors     []Competitor `json:"competitors"`
-	PercentComplete int          `json:"percentComplete"`
+	PercentComplete float64      `json:"percentComplete"`
 }
 
 type GameStatusResponse struct {
@@ -35,7 +35,9 @@ func getGameStatuses() (map[string]float64, error) {
 		return nil, err
 	}
 	var data GameStatusResponse
-	json.NewDecoder(r.Body).Decode(&data)
+	if err := json.NewDecoder(r.Body).Decode(&data); err != nil {
+		return nil, err
+	}
 	for _, e := range data.Events {
 		for _, c := range e.Competitors {
 			abbr := c.Abbr

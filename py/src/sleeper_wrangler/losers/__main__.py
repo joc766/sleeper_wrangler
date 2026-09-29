@@ -10,7 +10,7 @@ from sleeper_wrangler.loaders import (
     load_matchup_rosters,
     load_matchups,
 )
-from sleeper_wrangler.losers import calc_loser_probs
+from sleeper_wrangler.losers import calc_loser_probs_v2
 from sleeper_wrangler.sleeper_api import get_nfl_state
 
 
@@ -40,7 +40,7 @@ load_matchup_rosters(conn, league_id, week)
 load_matchup_players(conn, league_id, week)
 
 completion_by_team = get_game_statuses()
-loser_probs = calc_loser_probs(season, week, completion_by_team)
+loser_probs = calc_loser_probs_v2(season, week, completion_by_team)
 
 # TODO: move insertion to LoserProjections to server?
 data = json.dumps(loser_probs)

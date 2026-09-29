@@ -1,6 +1,7 @@
+import sqlite3
 from collections import defaultdict
 from dataclasses import dataclass
-from typing import NamedTuple
+from typing import NamedTuple, Tuple
 
 import numpy as np
 
@@ -38,14 +39,10 @@ def simulate(
     return rng.normal(loc=mu_i, scale=sigma_i)
 
 
-# TODO: include users that have a 0% chance still
-# TODO: don't use cursor
-def calc_loser_probs(
-    season: str, week: int, completion_by_team: dict[str, float] | None = None
-) -> dict[str, float]:
-    rng = np.random.default_rng()
-    with sleeper_connect() as conn:
-        cursor = conn.cursor()
+def load_team_rosters_and_players(
+    conn: sqlite3.Connection, season: str, week: int
+) -> tuple[dict[str, MatchupRosterData], list[str]]:
+    with conn:
         teams_query = """
             SELECT u.UserName, r.TeamName, mr.MatchupRosterID, mr.Points, mrp.PlayerID, p.Team AS 'PlayerTeam'
             FROM User AS u
@@ -57,8 +54,7 @@ def calc_loser_probs(
             WHERE l.Season = ?
             AND mr.Week = ?;
         """
-        cursor.execute(teams_query, (season, week))
-        matchup_results = cursor.fetchall()
+        matchup_results = conn.execute(teams_query, (season, week)).fetchall()
         team_rosters = {}
         all_players = []
         for row in matchup_results:
@@ -70,6 +66,18 @@ def calc_loser_probs(
                 team_rosters[username] = MatchupRosterData(Points=points, Starters=[])
             team_rosters[username].Starters.append(Player(player_id, team_abbr))
             all_players.append(player_id)
+
+        return team_rosters, all_players
+
+
+# TODO: include users that have a 0% chance still
+# TODO: don't use cursor
+def calc_loser_probs(
+    season: str, week: int, completion_by_team: dict[str, float] | None = None
+) -> dict[str, float]:
+    rng = np.random.default_rng()
+    with sleeper_connect() as conn:
+        team_rosters, all_players = load_team_rosters_and_players(conn, season, week)
 
         placeholders = ",".join(["?"] * len(all_players))
         proj_query = f"""
@@ -87,8 +95,7 @@ def calc_loser_probs(
                 )
             );
         """
-        cursor.execute(proj_query, all_players)
-        proj_results = cursor.fetchall()
+        proj_results = conn.execute(proj_query, all_players).fetchall()
 
         errors_by_player: dict[str, list[float]] = defaultdict(list)
 
@@ -142,3 +149,88 @@ def calc_loser_probs(
             for username, losses in sorted(losses.items(), key=lambda x: x[1])
         }
         return percents
+
+
+def simulate_v2(
+    rng: np.random.Generator,
+    error_pcts: list[float],
+    proj_pts_half_ppr: float,
+    percent_complete: float,
+) -> float:
+    time = 1.0 - percent_complete
+    err_pct = rng.choice(error_pcts)
+    return proj_pts_half_ppr * time + proj_pts_half_ppr * np.sqrt(time) * err_pct
+
+
+def calc_loser_probs_v2(
+    season: str, week: int, completion_by_team: dict[str, float] | None = None
+) -> dict[str, float]:
+    rng = np.random.default_rng()
+    with sleeper_connect() as conn:
+        team_rosters, _ = load_team_rosters_and_players(conn, season, week)
+
+        # TODO: for historical simulations, probably want to get rid of rows from weeks after current szn, week
+        # TODO: check for injury status
+        hist_data: list = conn.execute("""
+            SELECT p.[Position], proj.PointsHalfPPR AS 'projected', ph.PtsHalfPPR AS 'actual', ph.PtsHalfPPR - proj.PointsHalfPPR AS 'error'
+            FROM Projections proj
+               	JOIN Player p ON proj.PlayerID = p.PlayerID
+               	JOIN MatchupRoster mr ON proj.Season = mr.Season AND proj.Week = mr.Week
+               	JOIN MatchupRosterPlayer mrp ON mr.MatchupRosterID = mrp.MatchupRosterID AND proj.PlayerID = mrp.PlayerID
+               	JOIN PlayerHistory ph ON proj.Season = ph.Season AND proj.Week = ph.Week AND proj.PlayerID = ph.PlayerID
+             WHERE ph.PtsHalfPPR IS NOT NULL
+            AND proj.PointsHalfPPR IS NOT NULL
+            """).fetchall()
+
+        curr_wk_data: list = conn.execute(
+            """
+            SELECT p.Position, proj.PlayerID, proj.PointsHalfPPR AS 'projected'
+            FROM Projections proj
+               	JOIN MatchupRosterPlayer mrp ON proj.PlayerID = mrp.PlayerID
+               	JOIN MatchupRoster mr ON mrp.MatchupRosterID = mr.MatchupRosterID AND proj.Season = mr.Season AND proj.Week = mr.Week
+                JOIN Player p ON mrp.PlayerID = p.PlayerID
+            WHERE proj.Season = ?
+            AND proj.Week = ?
+            """,
+            (season, week),
+        ).fetchall()
+
+    errors_by_position = defaultdict(list)
+    wk_pos_proj_by_plyr: dict[str, tuple[str, float]] = {
+        row["PlayerID"]: (row["Position"], row["projected"]) for row in curr_wk_data
+    }
+    for row in hist_data:
+        err_as_pct = row["error"] / row["projected"]
+        errors_by_position[row["Position"]].append(err_as_pct)
+
+    losses = defaultdict(int)
+    if completion_by_team is None:
+        completion_by_team = get_game_statuses()
+
+    n_iterations = 10_000
+
+    # ISSUE: not getting errors_by_position correctly
+    for i in range(n_iterations):
+        scores: dict[str, float] = {
+            username: mr_data.Points
+            + sum(
+                simulate_v2(
+                    rng,
+                    errors_by_position[wk_pos_proj_by_plyr[player_id][0]],
+                    wk_pos_proj_by_plyr[player_id][1],
+                    completion_by_team[team_abbr],
+                )
+                for player_id, team_abbr in mr_data.Starters
+                if wk_pos_proj_by_plyr[player_id][1]
+                is not None  # don't calculate for players with no projection (injured), assumes a 0.
+            )
+            for username, mr_data in team_rosters.items()
+        }
+        loser = min(scores, key=lambda k: scores[k])
+        losses[loser] += 1
+
+    percents = {
+        username: (losses / n_iterations) * 100
+        for username, losses in sorted(losses.items(), key=lambda x: x[1])
+    }
+    return percents
