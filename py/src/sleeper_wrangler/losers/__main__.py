@@ -47,7 +47,7 @@ load_matchup_players(conn, league_id, week)
 # load_projections(conn, league_id, week)
 
 completion_by_team = get_game_statuses(wk_start, wk_end)
-loser_probs = calc_loser_probs(season, week, completion_by_team)
+loser_probs = calc_loser_probs_v2(season, week, completion_by_team)
 
 # TODO: move insertion to LoserProjections to server?
 data = json.dumps(loser_probs)

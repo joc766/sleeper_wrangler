@@ -23,7 +23,3 @@ def get_game_statuses(wk_start: date, wk_end: date) -> dict[str, float]:
             completion_by_team[abbr] = event["percentComplete"] / 100
 
     return completion_by_team
-
-
-if __name__ == "__main__":
-    print(get_game_statuses())

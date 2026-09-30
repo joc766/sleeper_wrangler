@@ -18,7 +18,7 @@ class InsertLeagueParms(NamedTuple):
 def create_league(conn: sqlite3.Connection, data: InsertLeagueParms):
     with conn:
         league_qry = """
-            INSERT OR REPLACE INTO League (LeagueID, Season, Name, Previous_League_ID, DraftID, Status, Settings, ScoringSettings, RosterPositions, JSONData)
+            INSERT OR REPLACE INTO League (LeagueID, Season, Name, Status, ScoringSettings, RosterPositions, Previous_League_ID, DraftID, Settings, JSONData)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """
         conn.execute(league_qry, data)
