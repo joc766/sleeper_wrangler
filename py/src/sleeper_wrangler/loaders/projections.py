@@ -2,6 +2,10 @@ import json
 import sqlite3
 from typing import NamedTuple
 
+from sleeper_wrangler.db import (
+    select_league_settings,
+    select_leagueid_from_season,
+)
 from sleeper_wrangler.sleeper_api import get_projections
 
 
@@ -38,8 +42,18 @@ def mock_projections() -> list:
 # Exclude historical weeks if we already have the data as well as future weeks (sleeper endpoint for current week)
 def load_projections(conn: sqlite3.Connection, season: str, week: int):
     projections = get_projections(season, week)
+    league_id = select_leagueid_from_season(conn, season)
+    league_settings = json.loads(select_league_settings(conn, league_id))
     with conn:
-        proj_data = [ProjectionData.from_json(p) for p in projections]
+        proj_data = []
+        for p in projections:
+            proj_points = 0.0
+            for stat_key, proj_amt in p["stats"].items():
+                if stat_key in league_settings:
+                    proj_points += float(league_settings[stat_key]) * proj_amt
+            p["stats"]["pts_half_ppr"] = proj_points
+            proj_data.append(ProjectionData.from_json(p))
+
         proj_query = """
             INSERT OR REPLACE INTO Projections (Date, Season, Week, PlayerID, InjuryStatus, PointsHalfPPR)
             VALUES (?, ?, ?, ?, ?, ?)
