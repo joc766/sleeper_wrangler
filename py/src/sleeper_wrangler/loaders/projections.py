@@ -1,4 +1,5 @@
 import json
+import math
 import sqlite3
 from typing import NamedTuple
 
@@ -37,6 +38,11 @@ def mock_projections() -> list:
     return data
 
 
+def truncate(number: float, decimals: int = 0) -> float:
+    factor = 10**decimals
+    return math.trunc(number * factor) / factor
+
+
 # TODO: account for the league's actual scoring when calculating projections
 # TODO: clean up with db functions and use database to see which weeks/seasons we need projections for
 # Exclude historical weeks if we already have the data as well as future weeks (sleeper endpoint for current week)
@@ -51,7 +57,7 @@ def load_projections(conn: sqlite3.Connection, season: str, week: int):
             for stat_key, proj_amt in p["stats"].items():
                 if stat_key in league_settings:
                     proj_points += float(league_settings[stat_key]) * proj_amt
-            p["stats"]["pts_half_ppr"] = proj_points
+            p["stats"]["pts_half_ppr"] = truncate(proj_points, 2)
             proj_data.append(ProjectionData.from_json(p))
 
         proj_query = """
