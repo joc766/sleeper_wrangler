@@ -19,9 +19,10 @@ def load_matchups(conn: sqlite3.Connection, league_id: str, week: int):
     matchups: list[dict] = get_matchups(league_id, week)
 
     # Group matchups by matchup_id to create unique Matchup records
-    matchup_rosters_by_key = defaultdict(list)
+    matchups_by_code = defaultdict(list)
     for m in matchups:
-        matchup_rosters_by_key[m["matchup_id"]].append(m)
+        if m.get("matchup_id") is not None:
+            matchups_by_code[m["matchup_id"]].append(m)
 
     matchup_rows: list[InsertMatchupParms] = [
         InsertMatchupParms(
@@ -33,7 +34,7 @@ def load_matchups(conn: sqlite3.Connection, league_id: str, week: int):
             PlayoffRound=week - 14,
             JSONData=json.dumps(matchup_rosters),
         )
-        for matchup_id, matchup_rosters in matchup_rosters_by_key.items()
+        for matchup_id, matchup_rosters in matchups_by_code.items()
     ]
     insert_matchups(conn, matchup_rows)
 
@@ -50,7 +51,7 @@ def load_matchup_rosters(conn: sqlite3.Connection, league_id: str, week: int):
             InsertMatchupRosterParms(
                 MatchupID=m.MatchupID,
                 RosterCode=r["roster_id"],
-                RosterID=rosters_by_code[r["roster_id"]],
+                RosterID=rosters_by_code.get(r["roster_id"]),
                 LeagueID=league_id,
                 Season=m.Season,
                 Week=m.Week,

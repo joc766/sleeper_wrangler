@@ -25,7 +25,7 @@ def load_player_history():
 
         player_ids = [row[0] for row in results]
         player_histories: list[PlayerHistory] = []
-        for szn in ["2025"]:
+        for szn in ["2023", "2024", "2025", "2026"]:
             for i, id in enumerate(player_ids):
                 print(f"Loading history for {szn}: {i}/{len(player_ids)}")
                 data = get_player_history(id, szn)

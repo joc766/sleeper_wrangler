@@ -15,7 +15,7 @@ CREATE TABLE Matchup (
 CREATE TABLE MatchupRoster (
   MatchupRosterID INTEGER PRIMARY KEY AUTOINCREMENT,
   MatchupID INTEGER NOT NULL,
-  RosterID INTEGER NOT NULL,
+  RosterID INTEGER,
   RosterCode INTEGER NOT NULL,
   LeagueID TEXT NOT NULL, -- Denormalized for performance
   Season TEXT NOT NULL, -- Denormalized for performance

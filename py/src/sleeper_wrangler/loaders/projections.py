@@ -4,7 +4,7 @@ import sqlite3
 from typing import NamedTuple
 
 from sleeper_wrangler.db import (
-    select_league_settings,
+    select_league_scoring_settings,
     select_leagueid_from_season,
 )
 from sleeper_wrangler.sleeper_api import get_projections
@@ -49,14 +49,14 @@ def truncate(number: float, decimals: int = 0) -> float:
 def load_projections(conn: sqlite3.Connection, season: str, week: int):
     projections = get_projections(season, week)
     league_id = select_leagueid_from_season(conn, season)
-    league_settings = json.loads(select_league_settings(conn, league_id))
+    scoring_settings = json.loads(select_league_scoring_settings(conn, league_id))
     with conn:
         proj_data = []
         for p in projections:
             proj_points = 0.0
             for stat_key, proj_amt in p["stats"].items():
-                if stat_key in league_settings:
-                    proj_points += float(league_settings[stat_key]) * proj_amt
+                if stat_key in scoring_settings:
+                    proj_points += float(scoring_settings[stat_key]) * proj_amt
             p["stats"]["pts_half_ppr"] = truncate(proj_points, 2)
             proj_data.append(ProjectionData.from_json(p))
 

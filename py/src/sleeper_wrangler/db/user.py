@@ -12,7 +12,7 @@ class CreateUsersParms(NamedTuple):
 
 def create_users(conn: sqlite3.Connection, users: list[CreateUsersParms]):
     user_qry = """
-        INSERT OR REPLACE INTO User (UserID, UserName, DisplayName, Avatar, JSONData)
+        INSERT OR IGNORE INTO User (UserID, UserName, DisplayName, Avatar, JSONData)
         VALUES (?, ?, ?, ?, ?)
     """
     with conn:

@@ -26,7 +26,7 @@ def load_rosters(conn: sqlite3.Connection, league_id: str) -> None:
     season = select_league_season(conn, league_id)
 
     team_names = {
-        user["user_id"]: user["metadata"]["team_name"]
+        user["user_id"]: user["metadata"].get("team_name", "No team name")
         for user in get_league_users(league_id)
     }
 
@@ -34,10 +34,11 @@ def load_rosters(conn: sqlite3.Connection, league_id: str) -> None:
     for r in rosters:
         metadata = r.get("metadata", {})
         settings = r.get("settings", {})
-        user_id = r.get("owner_id", "removed_user")
+        user_id = r["owner_id"] if r.get("owner_id") is not None else "removed_user"
         team_name = team_names.get(user_id, "Removed User's Team")
         record = metadata.get("record", "")
         wins, losses, ties = parse_record(record)
+        print(user_id)
         teams_data.append(
             CreateRosterParms(
                 UserID=user_id,

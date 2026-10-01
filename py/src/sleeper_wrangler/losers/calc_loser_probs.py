@@ -196,7 +196,10 @@ def calc_loser_probs_v2(
         row["PlayerID"]: (row["Position"], row["projected"]) for row in curr_wk_data
     }
     for row in hist_data:
-        err_as_pct = row["error"] / row["projected"]
+        try:
+            err_as_pct = row["error"] / row["projected"]
+        except ZeroDivisionError:
+            continue
         errors_by_position[row["Position"]].append(err_as_pct)
 
     losses = defaultdict(int)

@@ -14,7 +14,7 @@ class InsertMatchupParms(NamedTuple):
 
 class InsertMatchupRosterParms(NamedTuple):
     MatchupID: int
-    RosterID: int
+    RosterID: int | None
     RosterCode: int
     LeagueID: str
     Season: str

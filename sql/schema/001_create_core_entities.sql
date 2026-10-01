@@ -24,7 +24,7 @@ CREATE TABLE League (
 CREATE TABLE Roster (
   RosterID INTEGER PRIMARY KEY AUTOINCREMENT,
   RosterCode INTEGER NOT NULL,
-  UserID TEXT NOT NULL,
+  UserID TEXT,
   LeagueID TEXT NOT NULL,
   Season TEXT NOT NULL, -- Denormalized for performance
   TeamName TEXT,

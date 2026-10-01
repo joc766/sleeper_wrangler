@@ -1,6 +1,7 @@
 import json
 import sqlite3
 
+from sleeper_wrangler.db.player import CreatePlayerParams, create_players
 from sleeper_wrangler.sleeper_api import get_players
 
 
@@ -42,6 +43,7 @@ def load_players_data(conn: sqlite3.Connection, limit_to_existing=True):
     """
     try:
         players = get_players()
+        print(f"Retrieved Players ({len(players)}).")
 
         # If limiting to existing players, get the list of player IDs already referenced
         existing_player_ids = set()
@@ -65,11 +67,6 @@ def load_players_data(conn: sqlite3.Connection, limit_to_existing=True):
                 f"Found {len(existing_player_ids)} existing player references in database"
             )
 
-        player_qry = """
-            INSERT OR REPLACE INTO Player (PlayerID, FirstName, LastName, FullName, Team, Position, Status, InjuryStatus, Age, Height, Weight, College, YearsExp, SearchRank, JSONData)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """
-
         players_data = []
         skipped_no_position = 0
         skipped_not_existing = 0
@@ -91,28 +88,25 @@ def load_players_data(conn: sqlite3.Connection, limit_to_existing=True):
             full_name = f"{first_name} {last_name}".strip()
 
             players_data.append(
-                (
-                    player_id,
-                    first_name,
-                    last_name,
-                    full_name,
-                    player_data.get("team"),
-                    position,  # Already validated above
-                    player_data.get("status"),
-                    player_data.get("injury_status"),
-                    player_data.get("age"),
-                    player_data.get("height"),
-                    player_data.get("weight"),
-                    player_data.get("college"),
-                    player_data.get("years_exp"),
-                    player_data.get("search_rank"),
-                    json.dumps(player_data),
+                CreatePlayerParams(
+                    PlayerID=player_id,
+                    FirstName=first_name,
+                    LastName=last_name,
+                    FullName=full_name,
+                    Team=player_data.get("team"),
+                    Position=position,  # Already validated above
+                    Status=player_data.get("status"),
+                    InjuryStatus=player_data.get("injury_status"),
+                    Age=player_data.get("age"),
+                    Height=player_data.get("height"),
+                    Weight=player_data.get("weight"),
+                    College=player_data.get("college"),
+                    YearsExp=player_data.get("years_exp"),
+                    SearchRank=player_data.get("search_rank"),
+                    JSONData=json.dumps(player_data),
                 )
             )
-
-        cursor = conn.cursor()
-        cursor.executemany(player_qry, players_data)
-        conn.commit()
+        create_players(conn, players_data)
 
         print(f"Loaded {len(players_data)} players into database")
         if skipped_no_position > 0:
