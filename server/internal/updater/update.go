@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"maps"
+	"os"
 	"os/exec"
 	"path/filepath"
 	"time"
@@ -15,14 +16,31 @@ import (
 	"github.com/joc766/sleeper/losers/server/internal/sqlc"
 )
 
+func getPythonDir() (string, error) {
+	pyDir, ok := os.LookupEnv("PY_DIR")
+	if !ok {
+		return "", fmt.Errorf("set PY_DIR to the python project directory")
+	}
+
+	if info, err := os.Stat(pyDir); err != nil {
+		return "", fmt.Errorf("PY_DIR does not exist; set PY_DIR to the python project directory")
+	} else if !info.IsDir() {
+		return "", fmt.Errorf("PY_DIR must be a directory")
+	}
+	return pyDir, nil
+}
+
 func runPythonLoserSimulation(ctx context.Context) (hub.Update, error) {
-	projectDir := "/Users/jack/workspace/github.com/joc766/sleeper_wrangler/py"
+	pyDir, err := getPythonDir()
+	if err != nil {
+		return hub.Update{}, err
+	}
 	cmd := exec.CommandContext(
 		ctx,
-		filepath.Join(projectDir, ".venv", "/bin", "/python"),
+		filepath.Join(pyDir, ".venv", "/bin", "/python"),
 		"-m", "sleeper_wrangler.losers",
 	)
-	cmd.Dir = projectDir
+	cmd.Dir = pyDir
 
 	var outBuffer, stderr bytes.Buffer
 	cmd.Stdout = &outBuffer

@@ -116,18 +116,39 @@ func main() {
 	}
 }
 
-func run() error {
-	frontendDir := os.Getenv("FRONTEND_DIR")
-	if frontendDir == "" {
-		frontendDir = "../frontend"
-	}
-	if info, err := os.Stat(filepath.Join(frontendDir, "index.html")); err != nil {
-		return fmt.Errorf("frontend unavailable; set FRONTEND_DIR to the frontend directory: %w", err)
-	} else if info.IsDir() {
-		return fmt.Errorf("frontend index.html must be a file")
+func lookupFrontendDir() (string, error) {
+	frontendDir, ok := os.LookupEnv("FRONTEND_DIR")
+	if !ok {
+		return "", fmt.Errorf("frontend unavailable; set FRONTEND_DIR to the frontend directory")
 	}
 
-	database, err := db.Open("/Users/jack/.local/share/sleeper/db.sqlite3")
+	if info, err := os.Stat(filepath.Join(frontendDir, "index.html")); err != nil {
+		return "", fmt.Errorf("frontend unavailable; set FRONTEND_DIR to the frontend directory: %w", err)
+	} else if info.IsDir() {
+		return "", fmt.Errorf("frontend index.html must be a file")
+	}
+	return frontendDir, nil
+}
+
+func openDatabase() (*sql.DB, error) {
+	dbPath, ok := os.LookupEnv("DB_PATH")
+	if !ok {
+		return nil, fmt.Errorf("database unavailable; set DB_PATH to the database path")
+	}
+	database, err := db.Open(dbPath)
+	if err != nil {
+		return nil, fmt.Errorf("database unavailable: %w", err)
+	}
+	return database, nil
+}
+
+func run() error {
+	frontendDir, err := lookupFrontendDir()
+	if err != nil {
+		return err
+	}
+
+	database, err := openDatabase()
 	if err != nil {
 		return err
 	}
