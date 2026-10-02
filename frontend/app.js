@@ -67,39 +67,51 @@ events.onmessage = (event) => {
     );
 
     const rows = document.createDocumentFragment();
-    for (const [username, value] of entries) {
-      const row = document.createElement("tr");
-      const name = document.createElement("th");
-      name.scope = "row";
+    for (const [index, [username, value]] of entries.entries()) {
+      const row = document.createElement("li");
+      row.className = "manager-card";
+      const rank = document.createElement("span");
+      rank.className = "rank";
+      rank.textContent = String(index + 1).padStart(2, "0");
+      rank.setAttribute("aria-hidden", "true");
+      const name = document.createElement("h3");
+      name.className = "manager-name";
       name.textContent = username;
 
-      const cell = document.createElement("td");
+      const cell = document.createElement("div");
+      cell.className = "manager-detail";
       const probability = document.createElement("div");
       probability.className = "probability";
       const percentage = document.createElement("span");
       percentage.className = "percentage";
       percentage.textContent = `${value.toFixed()}%`;
 
-      const bar = document.createElement("progress");
-      bar.max = 100;
-      bar.value = value;
-      bar.setAttribute("aria-label", `${username}: chance of lowest score`);
-      bar.setAttribute("aria-valuetext", percentage.textContent);
-      probability.append(percentage, bar);
-      cell.append(probability);
-      row.append(name, cell);
+      const bar = document.createElement("div");
+      bar.className = "bar-track";
+      bar.setAttribute("aria-hidden", "true");
+      const fill = document.createElement("div");
+      fill.className = "bar-fill";
+      fill.style.width = `${value}%`;
+      bar.append(fill);
+      const description = document.createElement("span");
+      description.className = "visually-hidden";
+      description.textContent = " chance of lowest score";
+      percentage.append(description);
+      probability.append(bar, percentage);
+      cell.append(name, probability);
+      row.append(rank, cell);
       rows.append(row);
     }
 
     users.replaceChildren(rows);
+    createdAt.dateTime = created.toISOString();
+    createdAt.textContent = created.toLocaleString();
     hasResults = entries.length > 0;
     results.hidden = !hasResults;
     notice.hidden = hasResults;
     notice.textContent = hasResults
       ? ""
       : "No probabilities available yet. Waiting for the next simulation…";
-    createdAt.dateTime = created.toISOString();
-    createdAt.textContent = created.toLocaleString();
     connection.textContent = "Connected · Live updates";
   } catch {
     notice.hidden = false;
