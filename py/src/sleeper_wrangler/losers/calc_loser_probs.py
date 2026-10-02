@@ -1,3 +1,4 @@
+import math
 import sqlite3
 from collections import defaultdict
 from dataclasses import dataclass
@@ -24,6 +25,19 @@ class MatchupRosterData:
 class Game:
     projected: float
     actual: float
+
+
+def round_values(pcts: dict[str, float]) -> dict[str, int]:
+    rounded = {k: math.floor(v) for k, v in pcts.items()}
+    remaining = 100 - sum(rounded.values())
+    order = sorted(
+        pcts.keys(),
+        key=lambda k: pcts[k] - rounded[k],
+        reverse=True,
+    )
+    for k in order[:remaining]:
+        rounded[k] += 1
+    return rounded
 
 
 def simulate(
@@ -160,7 +174,7 @@ def simulate_v2(
 
 def calc_loser_probs_v2(
     season: str, week: int, completion_by_team: dict[str, float]
-) -> dict[str, float]:
+) -> dict[str, int]:
     rng = np.random.default_rng()
     with sleeper_connect() as conn:
         team_rosters, _ = load_team_rosters_and_players(conn, season, week)
@@ -235,4 +249,4 @@ def calc_loser_probs_v2(
         username: (losses / n_iterations) * 100
         for username, losses in sorted(losses.items(), key=lambda x: x[1])
     }
-    return percents
+    return round_values(percents)

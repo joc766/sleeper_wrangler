@@ -38,7 +38,6 @@ def load_rosters(conn: sqlite3.Connection, league_id: str) -> None:
         team_name = team_names.get(user_id, "Removed User's Team")
         record = metadata.get("record", "")
         wins, losses, ties = parse_record(record)
-        print(user_id)
         teams_data.append(
             CreateRosterParms(
                 UserID=user_id,
