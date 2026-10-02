@@ -21,11 +21,19 @@ events.onerror = () => {
 events.onmessage = (event) => {
   try {
     const update = JSON.parse(event.data);
-    if (update === null || typeof update !== "object" || Array.isArray(update)) {
+    if (
+      update === null ||
+      typeof update !== "object" ||
+      Array.isArray(update)
+    ) {
       throw new Error("Expected projection response");
     }
 
-    if (update.projections === null || typeof update.projections !== "object" || Array.isArray(update.projections)) {
+    if (
+      update.projections === null ||
+      typeof update.projections !== "object" ||
+      Array.isArray(update.projections)
+    ) {
       throw new Error("Expected username-to-percentage data");
     }
     if (typeof update.created_at !== "string" || !update.created_at.trim()) {
@@ -33,21 +41,30 @@ events.onmessage = (event) => {
     }
     // SQLite CURRENT_TIMESTAMP is UTC, but does not include a timezone.
     const timestamp = update.created_at.trim();
-    const normalizedTimestamp = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}(\.\d+)?$/.test(timestamp)
-      ? `${timestamp.replace(" ", "T")}Z`
-      : timestamp;
+    const normalizedTimestamp =
+      /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}(\.\d+)?$/.test(timestamp)
+        ? `${timestamp.replace(" ", "T")}Z`
+        : timestamp;
     const created = new Date(normalizedTimestamp);
     if (Number.isNaN(created.getTime())) {
       throw new Error("Invalid creation time");
     }
 
     const entries = Object.entries(update.projections);
-    if (entries.some(([, value]) =>
-      typeof value !== "number" || !Number.isFinite(value) || value < 0 || value > 100
-    )) {
+    if (
+      entries.some(
+        ([, value]) =>
+          typeof value !== "number" ||
+          !Number.isFinite(value) ||
+          value < 0 ||
+          value > 100,
+      )
+    ) {
       throw new Error("Invalid percentage");
     }
-    entries.sort(([nameA, a], [nameB, b]) => b - a || nameA.localeCompare(nameB));
+    entries.sort(
+      ([nameA, a], [nameB, b]) => b - a || nameA.localeCompare(nameB),
+    );
 
     const rows = document.createDocumentFragment();
     for (const [username, value] of entries) {
@@ -61,7 +78,7 @@ events.onmessage = (event) => {
       probability.className = "probability";
       const percentage = document.createElement("span");
       percentage.className = "percentage";
-      percentage.textContent = `${value.toFixed(2)}%`;
+      percentage.textContent = `${value.toFixed()}%`;
 
       const bar = document.createElement("progress");
       bar.max = 100;
@@ -78,7 +95,9 @@ events.onmessage = (event) => {
     hasResults = entries.length > 0;
     results.hidden = !hasResults;
     notice.hidden = hasResults;
-    notice.textContent = hasResults ? "" : "No probabilities available yet. Waiting for the next simulation…";
+    notice.textContent = hasResults
+      ? ""
+      : "No probabilities available yet. Waiting for the next simulation…";
     createdAt.dateTime = created.toISOString();
     createdAt.textContent = created.toLocaleString();
     connection.textContent = "Connected · Live updates";
