@@ -3,7 +3,9 @@ package updater
 import (
 	"bytes"
 	"context"
+	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"maps"
@@ -82,34 +84,37 @@ func GetLatestGameStatus(ctx context.Context, queries *sqlc.Queries) (map[string
 	return status, nil
 }
 
-func RunUpdater(ctx context.Context, queries *sqlc.Queries, updates chan hub.Update) {
+func CheckNewGameStatus(ctx context.Context, queries *sqlc.Queries) bool {
 	latestStatus, err := GetLatestGameStatus(ctx, queries)
-	if err != nil {
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		log.Println(err)
+		return false
+	} else {
+		currentStatus, err := getGameStatuses(ctx)
+		if err != nil {
+			log.Println(err)
+			return false
+		}
+		return !maps.Equal(latestStatus, currentStatus)
 	}
+}
+
+// TODO: also check if matchupRoster.starters_points JSONs have changed at all
+// (checks boths player IDs and points that way)
+func RunUpdater(ctx context.Context, queries *sqlc.Queries, updates chan hub.Update) {
 	for {
 		if ctx.Err() != nil {
 			return
 		}
-		currentStatus, err := getGameStatuses()
-		if err != nil {
-			log.Println(err)
-		} else {
-			if !maps.Equal(latestStatus, currentStatus) {
-				update, err := runPythonLoserSimulation(ctx)
-				if ctx.Err() != nil {
+		if CheckNewGameStatus(ctx, queries) {
+			if update, err := runPythonLoserSimulation(ctx); err != nil {
+				log.Printf("Error during simulation: %v", err)
+			} else {
+				select {
+				case updates <- update:
+				case <-ctx.Done():
 					return
 				}
-				if err != nil {
-					log.Printf("Error during simulation: %v", err)
-				} else {
-					select {
-					case updates <- update:
-					case <-ctx.Done():
-						return
-					}
-				}
-				latestStatus = currentStatus
 			}
 		}
 
