@@ -35,14 +35,15 @@ def load_matchup_players(conn: sqlite3.Connection, league_id: str, week: int):
     for mr in matchup_rosters:
         mr_id = mr["MatchupRosterID"]
         data = json.loads(mr["JSONData"])
-        for player_id, points in zip(data["starters"], data["starters_points"]):
+        starters = set(data["starters"])
+        for player_id, points in data["players_points"].items():
             if player_id != "0":
                 position = positions_by_playerid[player_id]
                 mr_player = MatchupRosterPlayer(
                     MatchupRosterID=mr_id,
                     PlayerID=player_id,
                     Position=position,
-                    Starter=1,
+                    Starter=1 if player_id in starters else 0,
                     Points=points,
                     ProjectedPoints=None,
                     JSONData=None,
