@@ -24,6 +24,15 @@
             </div>
             <p id="notice" role="status">Waiting for simulation results…</p>
             <section id="results" aria-labelledby="results-heading" hidden>
+                <div id="loser-card" class="loser-card" role="status" hidden>
+                    <div class="beer-glass" aria-hidden="true">
+                        <div class="beer-liquid">
+                            <span class="beer-bubbles"></span>
+                        </div>
+                    </div>
+                    <p id="loser-label" class="loser-label"></p>
+                    <h2 id="loser-name" class="loser-name"></h2>
+                </div>
                 <ol id="users" class="leaderboard" role="list"></ol>
                 <p class="updated-at">
                     Latest update: <time id="created-at">—</time>

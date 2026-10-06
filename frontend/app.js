@@ -6,6 +6,9 @@ const weekNumber = document.getElementById("week-number");
 const notice = document.getElementById("notice");
 const results = document.getElementById("results");
 const users = document.getElementById("users");
+const loserCard = document.getElementById("loser-card");
+const loserName = document.getElementById("loser-name");
+const loserLabel = document.getElementById("loser-label");
 const events = new EventSource("/events");
 let hasResults = false;
 
@@ -108,7 +111,13 @@ events.onmessage = (event) => {
     }
 
     users.replaceChildren(rows);
+    const loserDecided = entries.length === 1 && entries[0][1] === 100;
+    loserName.textContent = loserDecided ? entries[0][0] : "";
+    loserLabel.textContent = loserDecided ? `Week ${update.week} Loser` : "";
+    loserCard.hidden = !loserDecided;
+    users.hidden = loserDecided;
     weekNumber.textContent = `Week ${update.week}`;
+    weekNumber.hidden = loserDecided;
     createdAt.dateTime = created.toISOString();
     createdAt.textContent = created.toLocaleString();
     hasResults = entries.length > 0;
