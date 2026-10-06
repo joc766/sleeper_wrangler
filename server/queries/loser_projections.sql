@@ -2,7 +2,8 @@
 SELECT
   ProjectionData,
   CreatedAt,
-  GameStatus
+  GameStatus,
+  Week
 FROM
   LoserProjections
 WHERE
@@ -15,6 +16,6 @@ WHERE
 
 -- name: CreateLoserProjection :exec
 INSERT INTO
-  LoserProjections (ProjectionData, CreatedAt, GameStatus)
+  LoserProjections (ProjectionData, CreatedAt, GameStatus, Week)
 VALUES
-  (?, CURRENT_TIMESTAMP, ?);
+  (?, CURRENT_TIMESTAMP, ?, ?);

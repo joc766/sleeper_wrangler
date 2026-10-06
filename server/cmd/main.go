@@ -71,9 +71,16 @@ func handleEvents(ctx context.Context, queries *sqlc.Queries, h *hub.Hub) http.H
 				http.Error(w, "error unmarshalling projection data", http.StatusInternalServerError)
 				return
 			}
+			var week int
+			if !row.Week.Valid {
+				week = 0
+			} else {
+				week = int(row.Week.Int64)
+			}
 			responseData, err := json.Marshal(hub.Update{
 				Projections: projectionData,
 				CreatedAt:   row.Createdat,
+				Week:        week,
 			})
 
 			if err != nil {

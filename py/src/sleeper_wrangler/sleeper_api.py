@@ -172,7 +172,7 @@ class NFLState(NamedTuple):
     def from_json(cls, data):
         date_format = "%Y-%m-%d"
         return NFLState(
-            data["week"],
+            data["display_week"],
             data["season"],
             data["season_type"],
             data["season_has_scores"],

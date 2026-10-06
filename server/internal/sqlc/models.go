@@ -8,6 +8,14 @@ import (
 	"database/sql"
 )
 
+type Autosub struct {
+	Autosubid          int64
+	Leagueid           string
+	Week               int64
+	Playerid           string
+	Substituteplayerid string
+}
+
 type Draft struct {
 	Draftid   string
 	Leagueid  string
@@ -51,6 +59,7 @@ type Loserprojection struct {
 	Projectiondata    string
 	Createdat         string
 	Gamestatus        interface{}
+	Week              sql.NullInt64
 }
 
 type Matchup struct {
@@ -67,7 +76,7 @@ type Matchup struct {
 type Matchuproster struct {
 	Matchuprosterid int64
 	Matchupid       int64
-	Rosterid        int64
+	Rosterid        sql.NullInt64
 	Rostercode      int64
 	Leagueid        string
 	Season          string
@@ -128,7 +137,7 @@ type Projection struct {
 type Roster struct {
 	Rosterid    int64
 	Rostercode  int64
-	Userid      string
+	Userid      sql.NullString
 	Leagueid    string
 	Season      string
 	Teamname    sql.NullString

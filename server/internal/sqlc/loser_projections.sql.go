@@ -7,22 +7,24 @@ package sqlc
 
 import (
 	"context"
+	"database/sql"
 )
 
 const createLoserProjection = `-- name: CreateLoserProjection :exec
 INSERT INTO
-  LoserProjections (ProjectionData, CreatedAt, GameStatus)
+  LoserProjections (ProjectionData, CreatedAt, GameStatus, Week)
 VALUES
-  (?, CURRENT_TIMESTAMP, ?)
+  (?, CURRENT_TIMESTAMP, ?, ?)
 `
 
 type CreateLoserProjectionParams struct {
 	Projectiondata string
 	Gamestatus     interface{}
+	Week           sql.NullInt64
 }
 
 func (q *Queries) CreateLoserProjection(ctx context.Context, arg CreateLoserProjectionParams) error {
-	_, err := q.db.ExecContext(ctx, createLoserProjection, arg.Projectiondata, arg.Gamestatus)
+	_, err := q.db.ExecContext(ctx, createLoserProjection, arg.Projectiondata, arg.Gamestatus, arg.Week)
 	return err
 }
 
@@ -30,7 +32,8 @@ const getLatestProjection = `-- name: GetLatestProjection :one
 SELECT
   ProjectionData,
   CreatedAt,
-  GameStatus
+  GameStatus,
+  Week
 FROM
   LoserProjections
 WHERE
@@ -46,11 +49,17 @@ type GetLatestProjectionRow struct {
 	Projectiondata string
 	Createdat      string
 	Gamestatus     interface{}
+	Week           sql.NullInt64
 }
 
 func (q *Queries) GetLatestProjection(ctx context.Context) (GetLatestProjectionRow, error) {
 	row := q.db.QueryRowContext(ctx, getLatestProjection)
 	var i GetLatestProjectionRow
-	err := row.Scan(&i.Projectiondata, &i.Createdat, &i.Gamestatus)
+	err := row.Scan(
+		&i.Projectiondata,
+		&i.Createdat,
+		&i.Gamestatus,
+		&i.Week,
+	)
 	return i, err
 }

@@ -2,6 +2,7 @@
 
 const connection = document.getElementById("connection");
 const createdAt = document.getElementById("created-at");
+const weekNumber = document.getElementById("week-number");
 const notice = document.getElementById("notice");
 const results = document.getElementById("results");
 const users = document.getElementById("users");
@@ -38,6 +39,9 @@ events.onmessage = (event) => {
     }
     if (typeof update.created_at !== "string" || !update.created_at.trim()) {
       throw new Error("Missing creation time");
+    }
+    if (!Number.isInteger(update.week) || update.week < 1) {
+      throw new Error("Invalid week number");
     }
     // SQLite CURRENT_TIMESTAMP is UTC, but does not include a timezone.
     const timestamp = update.created_at.trim();
@@ -104,6 +108,7 @@ events.onmessage = (event) => {
     }
 
     users.replaceChildren(rows);
+    weekNumber.textContent = `Week ${update.week}`;
     createdAt.dateTime = created.toISOString();
     createdAt.textContent = created.toLocaleString();
     hasResults = entries.length > 0;

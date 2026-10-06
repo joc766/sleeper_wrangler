@@ -9,7 +9,7 @@ import (
 )
 
 type NFLState struct {
-	Week            int    `json:"week"`
+	Week            int    `json:"display_week"`
 	Season          string `json:"season"`
 	SeasonType      string `json:"season_type"`
 	SeasonHasScores bool   `json:"season_has_scores"`

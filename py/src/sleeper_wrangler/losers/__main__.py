@@ -53,14 +53,15 @@ loser_probs = calc_loser_probs(season, week, completion_by_team)
 data = json.dumps(loser_probs)
 with conn:
     responseData = conn.execute(
-        "INSERT INTO LoserProjections (ProjectionData, CreatedAt, GameStatus) VALUES (?, CURRENT_TIMESTAMP, ?) RETURNING CreatedAt",
-        (data, json.dumps(completion_by_team)),
+        "INSERT INTO LoserProjections (ProjectionData, CreatedAt, GameStatus, Week) VALUES (?, CURRENT_TIMESTAMP, ?, ?) RETURNING CreatedAt",
+        (data, json.dumps(completion_by_team), week),
     ).fetchone()
 
 json_data = json.dumps(
     {
         "projections": loser_probs,
         "created_at": responseData["CreatedAt"],
+        "week": week,
     }
 )
 print(json_data)
