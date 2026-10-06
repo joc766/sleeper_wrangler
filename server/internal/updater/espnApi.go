@@ -23,7 +23,7 @@ type GameStatusResponse struct {
 	Events []Event `json:"events"`
 }
 
-func getGameStatuses(ctx context.Context) (map[string]float64, error) {
+func getGameStatuses(ctx context.Context, wkStart time.Time, wkEnd time.Time) (map[string]float64, error) {
 	/*
 	 * Returns map of team abbreviations as keys
 	 * and float of percent complete as values
@@ -31,7 +31,8 @@ func getGameStatuses(ctx context.Context) (map[string]float64, error) {
 	completionByTeam := make(map[string]float64)
 	abbrCorrections := make(map[string]string)
 	abbrCorrections["WSH"] = "WAS"
-	URL := "https://site.web.api.espn.com/apis/fantasy/v2/games/ffl/games"
+	const timeFormat = "20060102"
+	URL := fmt.Sprintf("https://site.web.api.espn.com/apis/fantasy/v2/games/ffl/games?dates=%v-%v", wkStart.Format(timeFormat), wkEnd.Format(timeFormat))
 	req, err := http.NewRequestWithContext(ctx, "GET", URL, nil)
 	if err != nil {
 		return nil, err

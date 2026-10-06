@@ -11,7 +11,6 @@ from sleeper_wrangler.db.utils import (
     select_historical_performances,
     select_teams_and_starters,
 )
-from sleeper_wrangler.espn_api import get_game_statuses
 
 
 class Player(NamedTuple):

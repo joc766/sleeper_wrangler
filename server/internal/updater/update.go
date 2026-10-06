@@ -90,7 +90,17 @@ func CheckNewGameStatus(ctx context.Context, queries *sqlc.Queries) bool {
 		log.Println(err)
 		return false
 	} else {
-		currentStatus, err := getGameStatuses(ctx)
+		nflState, err := getNFLState(ctx)
+		if err != nil {
+			log.Println(err)
+			return false
+		}
+		week := nflState.Week
+		startWeekOffsetDays := 7 * (week - 1)
+		endWeekOffsetDays := (7 * week) - 1
+		tStart := time.Time(nflState.SeasonStartDate).AddDate(0, 0, startWeekOffsetDays)
+		tEnd := time.Time(nflState.SeasonStartDate).AddDate(0, 0, endWeekOffsetDays)
+		currentStatus, err := getGameStatuses(ctx, tStart, tEnd)
 		if err != nil {
 			log.Println(err)
 			return false
