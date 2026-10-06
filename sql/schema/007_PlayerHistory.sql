@@ -1,4 +1,4 @@
--- +goose up
+-- +goose Up
 CREATE TABLE PlayerHistory (
   PlayerHistoryID INTEGER PRIMARY KEY AUTOINCREMENT,
   PlayerID TEXT NOT NULL,
@@ -11,5 +11,5 @@ CREATE TABLE PlayerHistory (
 
 CREATE INDEX idx_playerhistory_player ON PlayerHistory (PlayerID);
 
--- +goose down
+-- +goose Down
 DROP TABLE PlayerHistory;

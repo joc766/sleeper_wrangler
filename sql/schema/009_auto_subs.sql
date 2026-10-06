@@ -1,4 +1,4 @@
--- +goose up
+-- +goose Up
 CREATE TABLE Autosubs (
   AutosubID INTEGER PRIMARY KEY AUTOINCREMENT,
   LeagueID TEXT NOT NULL,
@@ -10,5 +10,5 @@ CREATE TABLE Autosubs (
   FOREIGN KEY (SubstitutePlayerID) REFERENCES Player (PlayerID)
 );
 
--- +goose down
+-- +goose Down
 DROP TABLE Autosubs;

@@ -1,4 +1,4 @@
--- +goose up
+-- +goose Up
 CREATE TABLE LoserProjections (
   LoserProjectionID INTEGER PRIMARY KEY AUTOINCREMENT,
   ProjectionData TEXT NOT NULL,
@@ -6,5 +6,5 @@ CREATE TABLE LoserProjections (
   GameStatus TEXT NULL
 );
 
--- +goose down
+-- +goose Down
 DROP TABLE LoserProjections;
