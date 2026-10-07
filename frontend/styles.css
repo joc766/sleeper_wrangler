@@ -113,7 +113,7 @@ h1 {
         linear-gradient(90deg, rgba(255, 255, 255, 0.35), transparent 12%, transparent 85%, rgba(255, 255, 255, 0.25)),
         linear-gradient(#ffe096, #f5b83e 55%, #e99b24);
     box-shadow: inset 0 -12px 24px rgba(170, 91, 0, 0.1);
-    animation: beer-fill 2.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation: beer-fill 3.6s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 .beer-liquid::before,
@@ -208,6 +208,18 @@ h1 {
     letter-spacing: -0.035em;
     line-height: 1.2;
     overflow-wrap: anywhere;
+}
+
+@keyframes loser-name-reveal {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    .loser-name {
+        /* Begin as the 3.6s pour reaches the center of the glass. */
+        animation: loser-name-reveal 1.2s ease-out 0.6s both;
+    }
 }
 
 .leaderboard {
