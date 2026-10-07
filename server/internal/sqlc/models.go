@@ -60,6 +60,7 @@ type Loserprojection struct {
 	Createdat         string
 	Gamestatus        interface{}
 	Week              sql.NullInt64
+	Season            sql.NullString
 }
 
 type Matchup struct {

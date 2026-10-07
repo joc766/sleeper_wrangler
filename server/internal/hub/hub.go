@@ -8,6 +8,7 @@ type Update struct {
 	Projections map[UserName]float64 `json:"projections"`
 	CreatedAt   string               `json:"created_at"`
 	Week        int                  `json:"week"`
+	Season      string               `json:"season"`
 }
 
 type Hub struct {

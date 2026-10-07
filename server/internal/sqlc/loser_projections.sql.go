@@ -12,19 +12,31 @@ import (
 
 const createLoserProjection = `-- name: CreateLoserProjection :exec
 INSERT INTO
-  LoserProjections (ProjectionData, CreatedAt, GameStatus, Week)
+  LoserProjections (
+    ProjectionData,
+    CreatedAt,
+    GameStatus,
+    Week,
+    Season
+  )
 VALUES
-  (?, CURRENT_TIMESTAMP, ?, ?)
+  (?, CURRENT_TIMESTAMP, ?, ?, ?)
 `
 
 type CreateLoserProjectionParams struct {
 	Projectiondata string
 	Gamestatus     interface{}
 	Week           sql.NullInt64
+	Season         sql.NullString
 }
 
 func (q *Queries) CreateLoserProjection(ctx context.Context, arg CreateLoserProjectionParams) error {
-	_, err := q.db.ExecContext(ctx, createLoserProjection, arg.Projectiondata, arg.Gamestatus, arg.Week)
+	_, err := q.db.ExecContext(ctx, createLoserProjection,
+		arg.Projectiondata,
+		arg.Gamestatus,
+		arg.Week,
+		arg.Season,
+	)
 	return err
 }
 
@@ -33,7 +45,8 @@ SELECT
   ProjectionData,
   CreatedAt,
   GameStatus,
-  Week
+  Week,
+  Season
 FROM
   LoserProjections
 WHERE
@@ -50,6 +63,7 @@ type GetLatestProjectionRow struct {
 	Createdat      string
 	Gamestatus     interface{}
 	Week           sql.NullInt64
+	Season         sql.NullString
 }
 
 func (q *Queries) GetLatestProjection(ctx context.Context) (GetLatestProjectionRow, error) {
@@ -60,6 +74,7 @@ func (q *Queries) GetLatestProjection(ctx context.Context) (GetLatestProjectionR
 		&i.Createdat,
 		&i.Gamestatus,
 		&i.Week,
+		&i.Season,
 	)
 	return i, err
 }
