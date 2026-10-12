@@ -36,8 +36,8 @@ def select_teams_and_starters(conn: sqlite3.Connection, season: str, week: int):
                 CASE
                     WHEN (orig_proj.PointsHalfPPR IS NULL OR orig_proj.PointsHalfPPR = 0)
                         AND subs.SubstitutePlayerID IS NOT NULL
-                        THEN sub_proj.PointsHalfPPR
-                    ELSE orig_proj.PointsHalfPPR
+                        THEN COALESCE(sub_proj.PointsHalfPPR, 0.0)
+                    ELSE COALESCE(orig_proj.PointsHalfPPR, 0.0)
                 END AS ProjectedPoints
             FROM User AS u
                 JOIN Roster AS r on r.UserID = u.UserID

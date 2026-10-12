@@ -44,8 +44,6 @@ def truncate(number: float, decimals: int = 0) -> float:
 
 
 # TODO: account for the league's actual scoring when calculating projections
-# TODO: clean up with db functions and use database to see which weeks/seasons we need projections for
-# Exclude historical weeks if we already have the data as well as future weeks (sleeper endpoint for current week)
 def load_projections(conn: sqlite3.Connection, season: str, week: int):
     projections = get_projections(season, week)
     league_id = select_leagueid_from_season(conn, season)

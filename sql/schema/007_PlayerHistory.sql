@@ -9,6 +9,8 @@ CREATE TABLE PlayerHistory (
   FOREIGN KEY (PlayerID) REFERENCES Player (PlayerID)
 );
 
+CREATE INDEX idx_playerhistory_player_week_season ON PlayerHistory (PlayerID, Week, Season);
+
 CREATE INDEX idx_playerhistory_player ON PlayerHistory (PlayerID);
 
 -- +goose Down

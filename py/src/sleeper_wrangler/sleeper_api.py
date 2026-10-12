@@ -139,7 +139,7 @@ def get_matchups(leagueID: str, week: int) -> list[dict]:
 
 
 def get_projections(season: str, week: int) -> list[dict]:
-    url = f"https://api.sleeper.app/projections/nfl/{season}/{week}?season_type=regular"
+    url = f"https://api.sleeper.app/projections/nfl/{season}/{week}?position[]=QB&position[]=RB&position[]=WR&position[]=TE&position[]=K&position[]=DEF&season_type=regular"
     response = requests.get(url)
     response.raise_for_status()
     try:
