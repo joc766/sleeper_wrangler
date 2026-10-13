@@ -72,7 +72,8 @@ def simulate(
     percent_complete: float,
 ) -> float:
     time = 1.0 - percent_complete
-    return proj_pts_half_ppr * time + proj_pts_half_ppr * np.sqrt(time) * error_pct
+    # return proj_pts_half_ppr * time + proj_pts_half_ppr * np.sqrt(time) * error_pct
+    return proj_pts_half_ppr * time + proj_pts_half_ppr * time * error_pct
 
 
 def calc_loser_probs(
