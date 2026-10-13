@@ -10,10 +10,10 @@ from sleeper_wrangler.loaders import (
     load_matchup_players,
     load_matchup_rosters,
     load_matchups,
-    load_projections,
 )
-from sleeper_wrangler.losers import calc_loser_probs
 from sleeper_wrangler.sleeper_api import get_nfl_state
+
+from .calc_loser_probs import calc_loser_probs
 
 
 def timeit(func):

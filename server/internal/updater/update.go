@@ -5,10 +5,8 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"log"
-	"maps"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -33,6 +31,7 @@ func getPythonDir() (string, error) {
 }
 
 func runPythonLoserSimulation(ctx context.Context) (hub.Update, error) {
+	// TODO: have the loser simulation store some kind of matchup object to detect changes
 	pyDir, err := getPythonDir()
 	if err != nil {
 		return hub.Update{}, err
@@ -59,64 +58,38 @@ func runPythonLoserSimulation(ctx context.Context) (hub.Update, error) {
 	return update, nil
 }
 
-func GetLatestGameStatus(ctx context.Context, queries *sqlc.Queries) (map[string]float64, error) {
-	row, err := queries.GetLatestProjection(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	var data []byte
-	switch value := row.Gamestatus.(type) {
-	case string:
-		data = []byte(value)
-	case []byte:
-		data = value
-	case nil:
-		return nil, nil
-	default:
-		return nil, fmt.Errorf("unexpected GameStatus type %T", value)
-	}
-
-	var status map[string]float64
-	if err := json.Unmarshal(data, &status); err != nil {
-		return nil, fmt.Errorf("unexpected game status json: %w", err)
-	}
-	return status, nil
-}
-
-func CheckNewGameStatus(ctx context.Context, queries *sqlc.Queries) bool {
-	latestStatus, err := GetLatestGameStatus(ctx, queries)
-	if err != nil && !errors.Is(err, sql.ErrNoRows) {
-		log.Println(err)
-		return false
-	} else {
-		nflState, err := getNFLState(ctx)
-		if err != nil {
-			log.Println(err)
-			return false
-		}
-		week := nflState.Week
-		startWeekOffsetDays := 7 * (week - 1)
-		endWeekOffsetDays := (7 * week) - 1
-		tStart := time.Time(nflState.SeasonStartDate).AddDate(0, 0, startWeekOffsetDays)
-		tEnd := time.Time(nflState.SeasonStartDate).AddDate(0, 0, endWeekOffsetDays)
-		currentStatus, err := getGameStatuses(ctx, tStart, tEnd)
-		if err != nil {
-			log.Println(err)
-			return false
-		}
-		return !maps.Equal(latestStatus, currentStatus)
-	}
-}
-
-// TODO: also check if matchupRoster.starters_points JSONs have changed at all
-// (checks boths player IDs and points that way)
-func RunUpdater(ctx context.Context, queries *sqlc.Queries, updates chan hub.Update) {
+func RunUpdater(ctx context.Context, database *sql.DB, queries *sqlc.Queries, updates chan hub.Update) {
+	nextProjectionCheck := time.Time{}
 	for {
 		if ctx.Err() != nil {
 			return
 		}
-		if CheckNewGameStatus(ctx, queries) {
+		nflState, err := getNFLState(ctx)
+		if err != nil {
+			log.Printf("Error checking NFL State: %v", err)
+			continue
+		}
+		gameStatusChanged, err := CheckNewGameStatus(ctx, queries, nflState.SeasonStartDate, nflState.Week)
+		if err != nil {
+			log.Printf("Error checking game status: %v", err)
+		}
+
+		matchupsChanged, err := CheckNewMatchups(ctx, queries, nflState.Season, nflState.Week)
+		if err != nil {
+			log.Printf("Error checking new matchups: %v", err)
+		}
+		// don't want to abuse the projections endpoint since it's undocumented, so only check every 30 min
+		projectionsChanged := false
+		if !time.Now().Before(nextProjectionCheck) {
+			projectionsChanged, err = CheckNewProjections(ctx, database, queries, nflState.Season, nflState.Week)
+			if err != nil {
+				log.Printf("Error checking matchups: %v", err)
+			} else {
+				nextProjectionCheck = time.Now().Add(time.Minute * 30)
+			}
+		}
+		if gameStatusChanged || matchupsChanged || projectionsChanged {
+			log.Printf("gameStatusChanged: %v, matchupsChanged: %v, projectionsChanged: %v", gameStatusChanged, matchupsChanged, projectionsChanged)
 			if update, err := runPythonLoserSimulation(ctx); err != nil {
 				log.Printf("Error during simulation: %v", err)
 			} else {
@@ -129,7 +102,7 @@ func RunUpdater(ctx context.Context, queries *sqlc.Queries, updates chan hub.Upd
 		}
 
 		select {
-		case <-time.After(time.Second * 60):
+		case <-time.After(time.Minute):
 		case <-ctx.Done():
 			return
 		}

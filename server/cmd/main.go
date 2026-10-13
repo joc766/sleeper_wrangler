@@ -181,7 +181,7 @@ func run() error {
 		subscriberHub.Run(ctx)
 	})
 	workers.Go(func() {
-		updater.RunUpdater(ctx, queries, subscriberHub.Updates)
+		updater.RunUpdater(ctx, database, queries, subscriberHub.Updates)
 	})
 
 	mux := http.NewServeMux()

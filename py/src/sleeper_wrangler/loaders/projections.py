@@ -59,7 +59,9 @@ def load_projections(conn: sqlite3.Connection, season: str, week: int):
             proj_data.append(ProjectionData.from_json(p))
 
         proj_query = """
-            INSERT OR REPLACE INTO Projections (Date, Season, Week, PlayerID, InjuryStatus, PointsHalfPPR)
+            INSERT INTO Projections (Date, Season, Week, PlayerID, InjuryStatus, PointsHalfPPR)
             VALUES (?, ?, ?, ?, ?, ?)
+            ON CONFLICT (Season, Week, PlayerID)
+            DO UPDATE SET Date = excluded.Date, InjuryStatus = excluded.InjuryStatus, PointsHalfPPR = excluded.PointsHalfPPR
             """
         conn.executemany(proj_query, proj_data)
