@@ -20,7 +20,9 @@
                 <p id="week-number" class="week-number" aria-live="polite"></p>
             </header>
             <div class="stream-info">
-                <p id="connection" role="status">Connecting…</p>
+                <p id="connection" role="status" aria-label="Connecting">
+                    <span class="connection-spinner" aria-hidden="true"></span>
+                </p>
             </div>
             <p id="notice" role="status">Waiting for simulation results…</p>
             <section id="results" aria-labelledby="results-heading" hidden>

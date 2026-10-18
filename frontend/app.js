@@ -12,14 +12,23 @@ const loserLabel = document.getElementById("loser-label");
 const events = new EventSource("/events");
 let hasResults = false;
 
+function showConnectionSpinner() {
+  const spinner = document.createElement("span");
+  spinner.className = "connection-spinner";
+  spinner.setAttribute("aria-hidden", "true");
+  connection.replaceChildren(spinner);
+}
+
 events.onopen = () => {
-  connection.textContent = "Connected · Live updates";
+  connection.textContent = "Connected";
+  connection.setAttribute("aria-label", "Connected · Live updates");
+  connection.title = "Connected · Live updates";
 };
 
 events.onerror = () => {
-  connection.textContent = hasResults
-    ? "Connection lost · Reconnecting… Showing last received results."
-    : "Unable to connect · Retrying automatically…";
+  showConnectionSpinner();
+  connection.setAttribute("aria-label", "Reconnecting to live updates");
+  connection.title = "Reconnecting to live updates";
 };
 
 events.onmessage = (event) => {
@@ -177,7 +186,9 @@ events.onmessage = (event) => {
     notice.textContent = hasResults
       ? ""
       : "No probabilities available yet. Waiting for the next simulation…";
-    connection.textContent = "Connected · Live updates";
+    connection.textContent = "Connected";
+    connection.setAttribute("aria-label", "Connected · Live updates");
+    connection.title = "Connected · Live updates";
   } catch {
     notice.hidden = false;
     notice.textContent = hasResults
