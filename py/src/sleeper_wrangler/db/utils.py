@@ -7,8 +7,10 @@ def select_teams_and_starters(conn: sqlite3.Connection, season: str, week: int):
             """
             SELECT
                 u.UserName,
+                u.Avatar,
                 r.TeamName,
                 mr.MatchupRosterID,
+                COALESCE(mr.Points, 0.0) AS TeamCurrentPoints,
                 CASE
                     WHEN (orig_proj.PointsHalfPPR IS NULL OR orig_proj.PointsHalfPPR = 0)
                         AND subs.SubstitutePlayerID IS NOT NULL

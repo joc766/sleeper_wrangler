@@ -11,8 +11,8 @@ def load_league_users(conn: sqlite3.Connection, league_id: str) -> None:
             UserID=user_data["user_id"],
             UserName=user_data["display_name"].lower(),
             DisplayName=user_data["display_name"],
-            JSONData=json.dumps(user_data),
             Avatar=user_data.get("avatar"),
+            JSONData=json.dumps(user_data),
         )
         for user_data in get_league_users(league_id)
     ]

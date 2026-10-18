@@ -66,10 +66,23 @@ func handleEvents(ctx context.Context, queries *sqlc.Queries, h *hub.Hub) http.H
 		}
 
 		if sqlErr == nil {
-			var projectionData map[string]float64
-			if err := json.Unmarshal([]byte(row.Projectiondata), &projectionData); err != nil {
+			var storedData map[string]json.RawMessage
+			if err := json.Unmarshal([]byte(row.Projectiondata), &storedData); err != nil {
 				http.Error(w, "error unmarshalling projection data", http.StatusInternalServerError)
 				return
+			}
+			var projectionData hub.Update
+			if _, hasEnvelope := storedData["projections"]; hasEnvelope {
+				if err := json.Unmarshal([]byte(row.Projectiondata), &projectionData); err != nil {
+					http.Error(w, "error unmarshalling projection data", http.StatusInternalServerError)
+					return
+				}
+			} else {
+				// Continue to support rows saved before projection metadata was added.
+				if err := json.Unmarshal([]byte(row.Projectiondata), &projectionData.Projections); err != nil {
+					http.Error(w, "error unmarshalling projection data", http.StatusInternalServerError)
+					return
+				}
 			}
 
 			var week int
@@ -81,12 +94,10 @@ func handleEvents(ctx context.Context, queries *sqlc.Queries, h *hub.Hub) http.H
 				season = row.Season.String
 			}
 
-			responseData, err := json.Marshal(hub.Update{
-				Projections: projectionData,
-				CreatedAt:   row.Createdat,
-				Week:        week,
-				Season:      season,
-			})
+			projectionData.CreatedAt = row.Createdat
+			projectionData.Week = week
+			projectionData.Season = season
+			responseData, err := json.Marshal(projectionData)
 
 			if err != nil {
 				http.Error(w, "error marshaling response data", http.StatusInternalServerError)

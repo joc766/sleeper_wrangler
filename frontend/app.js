@@ -58,6 +58,16 @@ events.onmessage = (event) => {
     }
 
     const entries = Object.entries(update.projections);
+    const avatars = update.avatars ?? {};
+    const currentScores = update.current_scores ?? {};
+    const weeklyProjections = update.weekly_projections ?? {};
+    if (
+      avatars === null || typeof avatars !== "object" || Array.isArray(avatars) ||
+      currentScores === null || typeof currentScores !== "object" || Array.isArray(currentScores) ||
+      weeklyProjections === null || typeof weeklyProjections !== "object" || Array.isArray(weeklyProjections)
+    ) {
+      throw new Error("Invalid user metadata");
+    }
     if (
       entries.some(
         ([, value]) =>
@@ -85,6 +95,44 @@ events.onmessage = (event) => {
       name.className = "manager-name";
       name.textContent = username;
 
+      const identity = document.createElement("div");
+      identity.className = "manager-identity";
+      const avatarValue = avatars[username];
+      if (typeof avatarValue === "string" && avatarValue.trim()) {
+        const avatar = document.createElement("img");
+        avatar.className = "manager-avatar";
+        const avatarIdOrUrl = avatarValue.trim();
+        avatar.src = /^https?:\/\//i.test(avatarIdOrUrl)
+          ? avatarIdOrUrl
+          : `https://sleepercdn.com/avatars/${encodeURIComponent(avatarIdOrUrl)}`;
+        avatar.alt = "";
+        avatar.loading = "lazy";
+        avatar.addEventListener("error", () => avatar.remove(), { once: true });
+        identity.append(avatar);
+      }
+      identity.append(name);
+
+      const projection = weeklyProjections[username];
+      if (projection !== undefined && (typeof projection !== "number" || !Number.isFinite(projection))) {
+        throw new Error("Invalid weekly projection");
+      }
+      const currentScore = currentScores[username];
+      if (currentScore !== undefined && (typeof currentScore !== "number" || !Number.isFinite(currentScore))) {
+        throw new Error("Invalid current score");
+      }
+      const projectedPoints = document.createElement("span");
+      projectedPoints.className = "projected-points";
+      const formattedProjection =
+        typeof projection === "number"
+          ? projection.toFixed(2).replace(/\.00$/, "").replace(/(\.\d)0$/, "$1")
+          : "—";
+      const formattedCurrentScore =
+        typeof currentScore === "number"
+          ? currentScore.toFixed(2).replace(/\.00$/, "").replace(/(\.\d)0$/, "$1")
+          : "—";
+      projectedPoints.textContent = `${formattedCurrentScore} pts · ${formattedProjection} proj`;
+      projectedPoints.title = `${formattedCurrentScore} current points · ${formattedProjection} projected points`;
+
       const cell = document.createElement("div");
       cell.className = "manager-detail";
       const probability = document.createElement("div");
@@ -105,7 +153,10 @@ events.onmessage = (event) => {
       description.textContent = " chance of lowest score";
       percentage.append(description);
       probability.append(bar, percentage);
-      cell.append(name, probability);
+      const managerHeader = document.createElement("div");
+      managerHeader.className = "manager-header";
+      managerHeader.append(identity, projectedPoints);
+      cell.append(managerHeader, probability);
       row.append(rank, cell);
       rows.append(row);
     }

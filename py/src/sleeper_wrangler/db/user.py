@@ -6,14 +6,17 @@ class CreateUsersParms(NamedTuple):
     UserID: str
     UserName: str
     DisplayName: str
-    JSONData: str
     Avatar: str | None = None
+    JSONData: str | None = None
 
 
 def create_users(conn: sqlite3.Connection, users: list[CreateUsersParms]):
     user_qry = """
-        INSERT OR IGNORE INTO User (UserID, UserName, DisplayName, Avatar, JSONData)
+        INSERT INTO User (UserID, UserName, DisplayName, Avatar, JSONData)
         VALUES (?, ?, ?, ?, ?)
+        ON CONFLICT (UserID)
+        DO UPDATE SET Avatar = excluded.Avatar,
+        JSONData = excluded.JSONData
     """
     with conn:
         conn.executemany(user_qry, users)

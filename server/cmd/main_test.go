@@ -36,7 +36,7 @@ func TestEventsCancellation(t *testing.T) {
 				t.Fatal(err)
 			}
 			defer database.Close()
-			if _, err := database.Exec("CREATE TABLE LoserProjections (LoserProjectionID INTEGER PRIMARY KEY, ProjectionData TEXT, CreatedAt TEXT, Gamestatus TEXT)"); err != nil {
+			if _, err := database.Exec("CREATE TABLE LoserProjections (LoserProjectionID INTEGER PRIMARY KEY, ProjectionData TEXT, CreatedAt TEXT, Gamestatus TEXT, Week INTEGER, Season TEXT)"); err != nil {
 				t.Fatal(err)
 			}
 			queries := sqlc.New(database)

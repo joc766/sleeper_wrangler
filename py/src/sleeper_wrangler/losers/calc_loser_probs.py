@@ -14,11 +14,19 @@ from sleeper_wrangler.db.utils import (
 
 
 class Player(NamedTuple):
+    avatar: str | None
+    team_current_pts: float
     player_id: str
     team_abbr: str
     position: str
     proj_pts: float
     curr_pts: float
+
+
+class UserWeekData(NamedTuple):
+    avatar: str | None
+    current_points: float
+    projected_points: float
 
 
 @dataclass
@@ -55,6 +63,8 @@ def get_team_rosters_and_players(
         for row in teams_and_starters:
             starters_by_username[row["UserName"]].append(
                 Player(
+                    row["Avatar"],
+                    row["TeamCurrentPoints"],
                     row["PlayerID"],
                     row["PlayerTeam"],
                     row["Position"],
@@ -76,9 +86,9 @@ def simulate(
     return proj_pts_half_ppr * time + proj_pts_half_ppr * time * error_pct
 
 
-def calc_loser_probs(
+def calc_loser_data(
     season: str, week: int, completion_by_team: dict[str, float]
-) -> dict[str, int]:
+) -> tuple[dict[str, int], dict[str, UserWeekData]]:
     rng = np.random.default_rng()
     with sleeper_connect() as conn:
         starters_by_username = get_team_rosters_and_players(conn, season, week)
@@ -131,4 +141,23 @@ def calc_loser_probs(
         username: (losses / n_iterations) * 100
         for username, losses in sorted(losses.items(), key=lambda x: x[1])
     }
-    return round_values(percents)
+    user_week_data = {
+        username: UserWeekData(
+            starters[0].avatar,
+            starters[0].team_current_pts,
+            sum(
+                player.curr_pts + player.proj_pts * (1.0 - completion_by_team[player.team_abbr])
+                for player in starters
+                if completion_by_team.get(player.team_abbr) is not None
+            ),
+        )
+        for username, starters in starters_by_username.items()
+    }
+    return round_values(percents), user_week_data
+
+
+def calc_loser_probs(
+    season: str, week: int, completion_by_team: dict[str, float]
+) -> dict[str, int]:
+    probabilities, _ = calc_loser_data(season, week, completion_by_team)
+    return probabilities

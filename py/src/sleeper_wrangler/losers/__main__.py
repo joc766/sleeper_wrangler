@@ -13,7 +13,7 @@ from sleeper_wrangler.loaders import (
 )
 from sleeper_wrangler.sleeper_api import get_nfl_state
 
-from .calc_loser_probs import calc_loser_probs
+from .calc_loser_probs import calc_loser_data
 
 
 def timeit(func):
@@ -47,10 +47,23 @@ load_matchup_players(conn, league_id, week)
 # load_projections(conn, league_id, week)
 
 completion_by_team = get_game_statuses(wk_start, wk_end)
-loser_probs = calc_loser_probs(season, week, completion_by_team)
+loser_probs, user_week_data = calc_loser_data(season, week, completion_by_team)
+avatars = {username: data.avatar for username, data in user_week_data.items()}
+current_scores = {
+    username: data.current_points for username, data in user_week_data.items()
+}
+weekly_projections = {
+    username: data.projected_points for username, data in user_week_data.items()
+}
 
 # TODO: move insertion to LoserProjections to server?
-data = json.dumps(loser_probs)
+projection_data = {
+    "projections": loser_probs,
+    "avatars": avatars,
+    "current_scores": current_scores,
+    "weekly_projections": weekly_projections,
+}
+data = json.dumps(projection_data)
 with conn:
     responseData = conn.execute(
         """
@@ -62,7 +75,7 @@ with conn:
 
 json_data = json.dumps(
     {
-        "projections": loser_probs,
+        **projection_data,
         "created_at": responseData["CreatedAt"],
         "week": week,
         "season": season,
