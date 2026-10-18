@@ -20,6 +20,7 @@ class Player(NamedTuple):
     team_abbr: str
     position: str
     proj_pts: float
+    injury_status: str | None
     curr_pts: float
 
 
@@ -69,6 +70,7 @@ def get_team_rosters_and_players(
                     row["PlayerTeam"],
                     row["Position"],
                     row["ProjectedPoints"],
+                    row["InjuryStatus"],
                     row["CurrentPoints"],
                 )
             )
@@ -84,6 +86,12 @@ def simulate(
     time = 1.0 - percent_complete
     # return proj_pts_half_ppr * time + proj_pts_half_ppr * np.sqrt(time) * error_pct
     return proj_pts_half_ppr * time + proj_pts_half_ppr * time * error_pct
+
+
+def remaining_projection(player: Player) -> float:
+    if player.injury_status and player.injury_status.strip().casefold() == "out":
+        return 0.0
+    return player.proj_pts
 
 
 def calc_loser_data(
@@ -124,7 +132,7 @@ def calc_loser_data(
             username: sum(
                 simulate(
                     sampled_errors_by_player[p.player_id][i],
-                    p.proj_pts,
+                    remaining_projection(p),
                     completion_by_team[p.team_abbr],
                 )
                 + p.curr_pts
@@ -146,7 +154,9 @@ def calc_loser_data(
             starters[0].avatar,
             starters[0].team_current_pts,
             sum(
-                player.curr_pts + player.proj_pts * (1.0 - completion_by_team[player.team_abbr])
+                player.curr_pts
+                + remaining_projection(player)
+                * (1.0 - completion_by_team[player.team_abbr])
                 for player in starters
                 if completion_by_team.get(player.team_abbr) is not None
             ),
