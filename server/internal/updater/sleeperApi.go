@@ -31,7 +31,7 @@ func (d *Date) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-func getNFLState(ctx context.Context) (NFLState, error) {
+func GetNFLState(ctx context.Context) (NFLState, error) {
 	URL := "https://api.sleeper.app/v1/state/nfl"
 	client := http.Client{
 		Timeout: time.Second * 5,

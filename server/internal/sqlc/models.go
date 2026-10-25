@@ -52,6 +52,7 @@ type League struct {
 	Scoringsettings  sql.NullString
 	Rosterpositions  sql.NullString
 	Jsondata         sql.NullString
+	MasterLeagueID   sql.NullInt64
 }
 
 type Loserprojection struct {
@@ -61,6 +62,10 @@ type Loserprojection struct {
 	Gamestatus        interface{}
 	Week              sql.NullInt64
 	Season            sql.NullString
+}
+
+type Masterleague struct {
+	Masterleagueid int64
 }
 
 type Matchup struct {

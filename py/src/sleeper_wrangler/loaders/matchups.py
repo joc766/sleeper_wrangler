@@ -14,6 +14,7 @@ from sleeper_wrangler.db.roster import select_rosters
 from sleeper_wrangler.sleeper_api import get_matchups
 
 
+# TODO: use League.JSONData.setings.playoff_week_start to calculate is_playoff
 def load_matchups(conn: sqlite3.Connection, league_id: str, week: int):
     season: str = select_league_season(conn, league_id)
     matchups: list[dict] = get_matchups(league_id, week)

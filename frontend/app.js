@@ -9,8 +9,59 @@ const users = document.getElementById("users");
 const loserCard = document.getElementById("loser-card");
 const loserName = document.getElementById("loser-name");
 const loserLabel = document.getElementById("loser-label");
+const loserHistory = document.getElementById("loser-history");
+const loserLossNumber = document.getElementById("loser-loss-number");
+const loserLastLoss = document.getElementById("loser-last-loss");
+let historyKey = null;
+let historyRequest;
 const events = new EventSource("/events");
 let hasResults = false;
+
+function lossHistory(records, username, season, week) {
+  const previous = new Map();
+  for (const record of records) {
+    if (record.Username !== username) continue;
+    const year = Number(record.Season);
+    if (!Number.isInteger(year) || !Number.isInteger(record.Week)) continue;
+    if (year < season || (year === season && record.Week < week)) {
+      previous.set(`${year}-${record.Week}`, { season: year, week: record.Week });
+    }
+  }
+  const losses = [...previous.values()].sort((a, b) => b.season - a.season || b.week - a.week);
+  const count = losses.length + 1;
+  const suffix = count % 100 >= 11 && count % 100 <= 13
+    ? "th" : ({ 1: "st", 2: "nd", 3: "rd" }[count % 10] ?? "th");
+  return {
+    number: count === 1 ? "First loss" : `${count}${suffix} loss`,
+    last: losses.length ? `Last loss: Week ${losses[0].week}, ${losses[0].season}` : "",
+  };
+}
+
+async function updateLoserHistory(username, season, week) {
+  const key = username && /^\d{4}$/.test(String(season))
+    ? JSON.stringify([username, season, week]) : null;
+  if (key === historyKey) return;
+  historyRequest?.abort();
+  historyKey = key;
+  loserHistory.hidden = true;
+  if (!key) return;
+  const request = new AbortController();
+  historyRequest = request;
+  try {
+    const response = await fetch("/loserCounts", { signal: request.signal });
+    if (!response.ok) throw new Error("Could not fetch loss history");
+    const records = (await response.json()) ?? [];
+    if (!Array.isArray(records)) throw new Error("Invalid loss history");
+    const history = lossHistory(records, username, Number(season), week);
+    if (request.signal.aborted || historyKey !== key) return;
+    loserLossNumber.textContent = history.number;
+    loserLastLoss.textContent = history.last;
+    loserLastLoss.hidden = !history.last;
+    loserHistory.hidden = false;
+  } catch {
+    if (!request.signal.aborted && historyKey === key) historyKey = null;
+  }
+}
 
 function showConnectionSpinner() {
   const spinner = document.createElement("span");
@@ -171,10 +222,12 @@ events.onmessage = (event) => {
     }
 
     users.replaceChildren(rows);
-    const loserDecided = entries.length === 1 && entries[0][1] === 100;
+    const loserDecided = entries.length > 0 && entries[0][1] === 100
+      && entries.slice(1).every(([, probability]) => probability === 0);
     loserName.textContent = loserDecided ? entries[0][0] : "";
     loserLabel.textContent = loserDecided ? `Week ${update.week} Loser` : "";
     loserCard.hidden = !loserDecided;
+    updateLoserHistory(loserDecided ? entries[0][0] : null, update.season, update.week);
     users.hidden = loserDecided;
     weekNumber.textContent = `Week ${update.week}`;
     weekNumber.hidden = loserDecided;

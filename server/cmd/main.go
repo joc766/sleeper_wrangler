@@ -12,6 +12,7 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"strconv"
 	"sync"
 	"syscall"
 	"time"
@@ -32,7 +33,7 @@ func writeEvent(w io.Writer, update hub.Update) error {
 	return err
 }
 
-func handleEvents(ctx context.Context, queries *sqlc.Queries, h *hub.Hub) http.HandlerFunc {
+func (cfg AppConfig) handleEvents(ctx context.Context, h *hub.Hub) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		flusher, ok := w.(http.Flusher)
 		if !ok {
@@ -59,7 +60,7 @@ func handleEvents(ctx context.Context, queries *sqlc.Queries, h *hub.Hub) http.H
 			}
 		}()
 
-		row, sqlErr := queries.GetLatestProjection(r.Context())
+		row, sqlErr := cfg.Queries.GetLatestProjection(r.Context())
 		if sqlErr != nil && !errors.Is(sqlErr, sql.ErrNoRows) {
 			http.Error(w, "error getting latest update", http.StatusInternalServerError)
 			return
@@ -133,6 +134,50 @@ func handleEvents(ctx context.Context, queries *sqlc.Queries, h *hub.Hub) http.H
 	}
 }
 
+func (cfg AppConfig) handleGetLoserData(ctx context.Context) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// TODO: probably want to use the internal state but it's annoying right now because the checking
+		// logic is in the updater code
+		nflState, err := updater.GetNFLState(r.Context())
+		if err != nil {
+			http.Error(w, fmt.Sprintf("unable to pull NFL state"), http.StatusInternalServerError)
+			return
+		}
+		weekComplete, err := updater.IsWeekComplete(r.Context(), cfg.Queries, nflState.Season, nflState.Week)
+		if err != nil {
+			http.Error(w, "unable to read stored game statuses", http.StatusInternalServerError)
+			return
+		}
+		params := sqlc.GetLoserTableParams{
+			MasterLeagueID:   int64(cfg.MasterLeagueID),
+			CountPlayoff:     sql.NullInt64{Int64: int64(cfg.CountPlayoff), Valid: true},
+			TrackStartSeason: cfg.TrackStartSeason,
+			TrackStartWeek:   int64(cfg.TrackStartWeek),
+			CurrentSeason:    nflState.Season,
+			CurrentWeek:      int64(nflState.Week), // TODO: don't always use DisplayWeek, use normal week
+		}
+		if weekComplete {
+			params.CurrentWeek++
+		}
+		rows, err := cfg.Queries.GetLoserTable(r.Context(), params)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("%v", err), http.StatusInternalServerError)
+			return
+		}
+
+		jsonData, err := json.Marshal(rows)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("unable to marshal json data: %v", err), http.StatusInternalServerError)
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(jsonData)
+
+	}
+
+}
+
 func main() {
 	if err := run(); err != nil {
 		log.Fatal(err)
@@ -165,19 +210,85 @@ func openDatabase() (*sql.DB, error) {
 	return database, nil
 }
 
-func run() error {
+type AppConfig struct {
+	FrontendDir      string
+	PyDir            string
+	Database         *sql.DB
+	Queries          *sqlc.Queries
+	MasterLeagueID   int
+	CountPlayoff     int
+	TrackStartSeason string
+	TrackStartWeek   int
+	CurrentWeek      int
+	CurrentSeason    string
+}
+
+func loadConfig() (AppConfig, error) {
+	var cfg AppConfig
+
 	frontendDir, err := lookupFrontendDir()
 	if err != nil {
-		return err
+		return AppConfig{}, err
 	}
+	cfg.FrontendDir = frontendDir
 
 	database, err := openDatabase()
 	if err != nil {
+		return AppConfig{}, err
+	}
+	cfg.Database = database
+
+	cfg.Queries = sqlc.New(database)
+
+	masterLeagueIDStr, ok := os.LookupEnv("MASTER_LEAGUE_ID")
+	if !ok {
+		return AppConfig{}, fmt.Errorf("must set MASTER_LEAGUE_ID")
+	}
+	masterLeagueID, err := strconv.Atoi(masterLeagueIDStr)
+	if err != nil {
+		return AppConfig{}, fmt.Errorf("invalid MASTER_LEAGUE_ID: %v", err)
+	}
+	cfg.MasterLeagueID = masterLeagueID
+
+	countPlayoffStr, ok := os.LookupEnv("COUNT_PLAYOFF")
+	if !ok {
+		countPlayoffStr = "0"
+	}
+	countPlayoff, err := strconv.Atoi(countPlayoffStr)
+	if err != nil || countPlayoff > 1 || countPlayoff < 0 {
+		return AppConfig{}, fmt.Errorf("invalid COUNT_PLAYOFF_STR (%v): %v", countPlayoffStr, err)
+	}
+	cfg.CountPlayoff = countPlayoff
+
+	trackStartSeason, ok := os.LookupEnv("TRACK_START_SEASON")
+	if !ok || trackStartSeason == "" {
+		return AppConfig{}, fmt.Errorf("must set TRACK_START_SEASON")
+	}
+	cfg.TrackStartSeason = trackStartSeason
+
+	trackStartWeekStr, ok := os.LookupEnv("TRACK_START_WEEK")
+	if !ok {
+		return AppConfig{}, fmt.Errorf("must set TRACK_START_WEEK")
+	}
+	trackStartWeek, err := strconv.Atoi(trackStartWeekStr)
+	if err != nil || trackStartWeek < 1 {
+		return AppConfig{}, fmt.Errorf("invalid TRACK_START_WEEK (%q): must be a positive integer", trackStartWeekStr)
+	}
+	cfg.TrackStartWeek = trackStartWeek
+
+	return cfg, nil
+}
+
+func run() error {
+	cfg, err := loadConfig()
+	if err != nil {
+		if cfg.Database != nil {
+			cfg.Database.Close()
+		}
 		return err
 	}
-	defer database.Close()
+	defer cfg.Database.Close()
 
-	queries := sqlc.New(database)
 	subscriberHub := hub.NewHub()
 
 	ctx, cancel := signal.NotifyContext(
@@ -192,12 +303,16 @@ func run() error {
 		subscriberHub.Run(ctx)
 	})
 	workers.Go(func() {
-		updater.RunUpdater(ctx, database, queries, subscriberHub.Updates)
+		updater.RunUpdater(ctx, cfg.Database, cfg.Queries, subscriberHub.Updates)
 	})
 
 	mux := http.NewServeMux()
-	mux.HandleFunc("GET /events", handleEvents(ctx, queries, subscriberHub))
-	mux.Handle("GET /", http.FileServer(http.Dir(frontendDir)))
+	mux.HandleFunc("GET /events", cfg.handleEvents(ctx, subscriberHub))
+	mux.HandleFunc("GET /loserCounts", cfg.handleGetLoserData(ctx))
+	mux.HandleFunc("GET /chart", func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, filepath.Join(cfg.FrontendDir, "chart.html"))
+	})
+	mux.Handle("GET /", http.FileServer(http.Dir(cfg.FrontendDir)))
 
 	server := &http.Server{
 		Addr:    ":8080",

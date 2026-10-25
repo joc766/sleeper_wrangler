@@ -50,7 +50,7 @@ func TestEventsCancellation(t *testing.T) {
 			w := &flushRecorder{httptest.NewRecorder(), make(chan struct{}, 1)}
 			done := make(chan struct{})
 			go func() {
-				handleEvents(ctx, queries, h)(w, r)
+				cfg.handleEvents(ctx, queries, h)(w, r)
 				close(done)
 			}()
 			select {

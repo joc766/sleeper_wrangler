@@ -88,6 +88,7 @@ def insert_matchup_rosters(
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         ON CONFLICT (MatchupID, RosterCode)
         DO UPDATE SET
+            RosterID = excluded.RosterID,
             Points = excluded.Points,
             IsWinner = excluded.IsWinner,
             JSONData = excluded.JSONData;

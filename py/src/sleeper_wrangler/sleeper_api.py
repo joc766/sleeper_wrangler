@@ -1,5 +1,5 @@
 from datetime import date, datetime
-from typing import NamedTuple
+from typing import Any, NamedTuple
 
 import requests
 from requests.exceptions import JSONDecodeError
@@ -16,13 +16,24 @@ def get_players():
     return data
 
 
-def get_league(leagueid):
-    url = "https://api.sleeper.app/v1/league/" + leagueid
+def get_user_league_id(user_id: str, season: str):
+    url = f"https://api.sleeper.app/v1/user/{user_id}/leagues/nfl/{season}"
     response = requests.get(url)
 
     response.raise_for_status()
 
     data = response.json()
+
+    return data[0]["league_id"]
+
+
+def get_league(leagueid) -> dict[str, Any]:
+    url = "https://api.sleeper.app/v1/league/" + leagueid
+    response = requests.get(url)
+
+    response.raise_for_status()
+
+    data: dict[str, Any] = response.json()
 
     return data
 
@@ -162,6 +173,7 @@ def get_player_history(player_id: str, season: str) -> dict[str, dict]:
 
 
 class NFLState(NamedTuple):
+    display_week: int
     week: int
     season: str
     season_type: str
@@ -173,6 +185,7 @@ class NFLState(NamedTuple):
         date_format = "%Y-%m-%d"
         return NFLState(
             data["display_week"],
+            data["week"],
             data["season"],
             data["season_type"],
             data["season_has_scores"],
@@ -186,3 +199,14 @@ def get_nfl_state():
     r.raise_for_status()
     data = NFLState.from_json(r.json())
     return data
+
+
+def get_all_leagues(latest_id: str) -> list:
+    leagues: list = []
+    curr_league: str | None = latest_id
+    while curr_league is not None:
+        league_info = get_league(curr_league)
+        leagues.append(league_info)
+        curr_league = league_info.get("previous_league_id")
+    leagues.reverse()
+    return leagues

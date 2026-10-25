@@ -5,7 +5,7 @@ from sleeper_wrangler.db.league import InsertLeagueParms, create_league
 from sleeper_wrangler.sleeper_api import get_league
 
 
-def load_league(conn: sqlite3.Connection, league_id: str):
+def load_league(conn: sqlite3.Connection, league_id: str, master_league_id: int):
     """
     Processes and inserts all data related to a single league into the database.
     """
@@ -21,6 +21,7 @@ def load_league(conn: sqlite3.Connection, league_id: str):
         ScoringSettings=json.dumps(league.get("scoring_settings", {})),
         RosterPositions=json.dumps(league.get("roster_positions", [])),
         JSONData=json.dumps(league),
+        MasterLeagueID=master_league_id,
     )
     create_league(conn, league_data)
     return league_data.Previous_League_ID

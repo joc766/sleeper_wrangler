@@ -13,13 +13,22 @@ class InsertLeagueParms(NamedTuple):
     DraftID: str | None
     Settings: str
     JSONData: str | None
+    MasterLeagueID: int | None
+
+
+def create_master_league(conn: sqlite3.Connection):
+    master_league_qry = (
+        "INSERT INTO MasterLeague DEFAULT VALUES RETURNING MasterLeagueID"
+    )
+    with conn:
+        return conn.execute(master_league_qry).fetchone()[0]
 
 
 def create_league(conn: sqlite3.Connection, data: InsertLeagueParms):
     with conn:
         league_qry = """
-            INSERT INTO League (LeagueID, Season, Name, Status, ScoringSettings, RosterPositions, Previous_League_ID, DraftID, Settings, JSONData)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO League (LeagueID, Season, Name, Status, ScoringSettings, RosterPositions, Previous_League_ID, DraftID, Settings, JSONData, MasterLeagueID)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT (LeagueID)
             DO UPDATE SET
                 Season = excluded.Season,
@@ -30,7 +39,8 @@ def create_league(conn: sqlite3.Connection, data: InsertLeagueParms):
                 Previous_League_ID = excluded.Previous_League_ID,
                 DraftID = excluded.DraftID,
                 Settings = excluded.Settings,
-                JSONData = excluded.JSONData
+                JSONData = excluded.JSONData,
+                MasterLeagueID = excluded.MasterLeagueID
         """
         conn.execute(league_qry, data)
 
@@ -57,3 +67,9 @@ def select_league_settings(conn: sqlite3.Connection, league_id: str):
     return conn.execute(
         "SELECT Settings FROM League WHERE LeagueID = ?", (league_id,)
     ).fetchone()["Settings"]
+
+
+def select_league(conn: sqlite3.Connection, league_id: str):
+    return conn.execute(
+        "SELECT * FROM League WHERE LeagueID = ?", (league_id,)
+    ).fetchone()

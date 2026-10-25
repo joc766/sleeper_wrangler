@@ -78,7 +78,8 @@ h1 {
     }
 }
 
-#notice {
+#notice,
+#chart-notice {
     padding: 1rem;
     margin-bottom: 1rem;
     background: #fff;
@@ -324,6 +325,17 @@ h1 {
     overflow-wrap: anywhere;
 }
 
+.loser-history {
+    margin-top: 0.75rem;
+    color: #69410e;
+    font-size: 0.75rem;
+}
+
+.loser-loss-number {
+    font-size: 1rem;
+    font-weight: 600;
+}
+
 @keyframes loser-name-reveal {
     from {
         opacity: 0;
@@ -461,4 +473,50 @@ h1 {
     margin-top: 0.5rem;
     color: #58677a;
     font-size: 0.75rem;
+}
+
+.counts-chart {
+    max-width: 60rem;
+}
+
+.view-toggle {
+    display: flex;
+    width: fit-content;
+    gap: 0.25rem;
+    padding: 0.125rem;
+    margin-bottom: 0.625rem;
+    border-radius: 0.375rem;
+    background: #e8edf4;
+}
+
+.view-toggle button {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.25rem 0.5rem;
+    min-height: 28px;
+    border: 0;
+    border-radius: 0.25rem;
+    background: transparent;
+    color: #58677a;
+    font: 600 0.6875rem "Poppins", sans-serif;
+    cursor: pointer;
+}
+
+.view-toggle button[aria-pressed="true"] {
+    color: #243f65;
+    background: #fff;
+}
+
+.view-toggle button:focus-visible {
+    outline: 2px solid #e99b24;
+    outline-offset: 2px;
+}
+
+.counts-plot {
+    position: relative;
+    padding: 0.75rem;
+    background: #fff;
+    border: 1px solid #dce2ea;
+    border-radius: 0.5rem;
 }

@@ -64,7 +64,7 @@ func RunUpdater(ctx context.Context, database *sql.DB, queries *sqlc.Queries, up
 		if ctx.Err() != nil {
 			return
 		}
-		nflState, err := getNFLState(ctx)
+		nflState, err := GetNFLState(ctx)
 		if err != nil {
 			log.Printf("Error checking NFL State: %v", err)
 			continue

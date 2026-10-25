@@ -12,9 +12,16 @@
         />
         <link rel="stylesheet" href="/styles.css" />
         <script src="/app.js" defer></script>
+        <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js" defer></script>
+        <script type="module" src="/chart.js"></script>
     </head>
     <body>
         <main>
+            <nav class="view-toggle" aria-label="Choose view">
+                <button type="button" id="projections-toggle" aria-pressed="true" aria-controls="projections-view"><span aria-hidden="true">⚡</span> Projections</button>
+                <button type="button" id="history-toggle" aria-pressed="false" aria-controls="history-view"><span aria-hidden="true">▥</span> Loss History</button>
+            </nav>
+            <div id="projections-view">
             <header class="page-header">
                 <h1 id="results-heading">🍺 Tuesday Beer Tracker</h1>
                 <p id="week-number" class="week-number" aria-live="polite"></p>
@@ -34,12 +41,30 @@
                     </div>
                     <p id="loser-label" class="loser-label"></p>
                     <h2 id="loser-name" class="loser-name"></h2>
+                    <div id="loser-history" class="loser-history" hidden>
+                        <p id="loser-loss-number" class="loser-loss-number"></p>
+                        <p id="loser-last-loss"></p>
+                    </div>
                 </div>
                 <ol id="users" class="leaderboard" role="list"></ol>
                 <p class="updated-at">
                     Latest update: <time id="created-at">—</time>
                 </p>
             </section>
+            </div>
+            <div id="history-view" hidden>
+                <header>
+                    <h1 id="chart-heading">🍺 Loser Counts</h1>
+                </header>
+                <p id="chart-notice" role="status">Loading loser counts…</p>
+                <section id="chart-results" aria-labelledby="chart-heading" hidden>
+                    <p id="chart-summary" class="stream-info"></p>
+                    <div class="counts-plot">
+                        <canvas id="losses-chart" role="img" aria-label="Total losses per player, split by season"></canvas>
+                    </div>
+                    <ul id="chart-users" class="visually-hidden"></ul>
+                </section>
+            </div>
             <noscript
                 >Enable JavaScript to receive live simulation results.</noscript
             >
