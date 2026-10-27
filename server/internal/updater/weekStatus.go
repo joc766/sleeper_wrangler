@@ -10,34 +10,44 @@ import (
 	"github.com/joc766/sleeper/losers/server/internal/sqlc"
 )
 
+type WeekStatus struct {
+	Season     string
+	Week       int64
+	IsComplete bool
+}
+
 // IsWeekComplete uses the statuses saved with the latest simulation.
-func IsWeekComplete(ctx context.Context, queries *sqlc.Queries, season string, week int) (bool, error) {
+func GetWeekStatus(ctx context.Context, queries *sqlc.Queries) (WeekStatus, error) {
 	row, err := queries.GetLatestProjection(ctx)
 	if errors.Is(err, sql.ErrNoRows) {
-		return false, nil
+		return WeekStatus{}, fmt.Errorf("LoserProjections returned no rows.")
 	}
 	if err != nil {
-		return false, err
+		return WeekStatus{}, err
 	}
-	if !row.Season.Valid || !row.Week.Valid || row.Season.String != season || row.Week.Int64 != int64(week) {
-		return false, nil
+	if !row.Season.Valid || !row.Week.Valid {
+		return WeekStatus{}, fmt.Errorf("invalid season or week returned from LoserProjections.")
 	}
 	var data []byte
 	switch value := row.Gamestatus.(type) {
 	case nil:
-		return false, nil
+		return WeekStatus{}, fmt.Errorf("empty game status returned from LoserProjections.")
 	case string:
 		data = []byte(value)
 	case []byte:
 		data = value
 	default:
-		return false, fmt.Errorf("unexpected GameStatus type %T", value)
+		return WeekStatus{}, fmt.Errorf("unexpected GameStatus type %T", value)
 	}
 	var statuses map[string]float64
 	if err := json.Unmarshal(data, &statuses); err != nil {
-		return false, fmt.Errorf("decode stored game statuses: %w", err)
+		return WeekStatus{}, fmt.Errorf("decode stored game statuses: %w", err)
 	}
-	return allGamesComplete(statuses), nil
+	return WeekStatus{
+		Season:     row.Season.String,
+		Week:       row.Week.Int64,
+		IsComplete: allGamesComplete(statuses),
+	}, nil
 }
 
 func allGamesComplete(statuses map[string]float64) bool {

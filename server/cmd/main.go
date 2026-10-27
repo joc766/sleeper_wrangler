@@ -136,14 +136,9 @@ func (cfg AppConfig) handleEvents(ctx context.Context, h *hub.Hub) http.HandlerF
 
 func (cfg AppConfig) handleGetLoserData(ctx context.Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// TODO: probably want to use the internal state but it's annoying right now because the checking
-		// logic is in the updater code
-		nflState, err := updater.GetNFLState(r.Context())
-		if err != nil {
-			http.Error(w, fmt.Sprintf("unable to pull NFL state"), http.StatusInternalServerError)
-			return
-		}
-		weekComplete, err := updater.IsWeekComplete(r.Context(), cfg.Queries, nflState.Season, nflState.Week)
+		// TODO: need a stable default to fall back to if there's no current data in /LoserProjections (although it will likely fix itself quickly)
+		// TODO: We're currently using DisplayWeek everywhere. Probably no value in using the actual Week anyway, since we can know if we need to add 1 for the chart by checking the latest game statuses ourselves anyway
+		weekStatus, err := updater.GetWeekStatus(r.Context(), cfg.Queries)
 		if err != nil {
 			http.Error(w, "unable to read stored game statuses", http.StatusInternalServerError)
 			return
@@ -153,10 +148,10 @@ func (cfg AppConfig) handleGetLoserData(ctx context.Context) http.HandlerFunc {
 			CountPlayoff:     sql.NullInt64{Int64: int64(cfg.CountPlayoff), Valid: true},
 			TrackStartSeason: cfg.TrackStartSeason,
 			TrackStartWeek:   int64(cfg.TrackStartWeek),
-			CurrentSeason:    nflState.Season,
-			CurrentWeek:      int64(nflState.Week), // TODO: don't always use DisplayWeek, use normal week
+			CurrentSeason:    weekStatus.Season,
+			CurrentWeek:      weekStatus.Week, // TODO: don't always use DisplayWeek, use normal week
 		}
-		if weekComplete {
+		if weekStatus.IsComplete {
 			params.CurrentWeek++
 		}
 		rows, err := cfg.Queries.GetLoserTable(r.Context(), params)
@@ -219,8 +214,6 @@ type AppConfig struct {
 	CountPlayoff     int
 	TrackStartSeason string
 	TrackStartWeek   int
-	CurrentWeek      int
-	CurrentSeason    string
 }
 
 func loadConfig() (AppConfig, error) {

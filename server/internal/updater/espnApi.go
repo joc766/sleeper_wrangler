@@ -1,5 +1,7 @@
 package updater
 
+// TODO: check what the behavior of the game statuses endpoint is when overtime happens
+
 import (
 	"context"
 	"encoding/json"
