@@ -173,7 +173,6 @@ def get_player_history(player_id: str, season: str) -> dict[str, dict]:
 
 
 class NFLState(NamedTuple):
-    display_week: int
     week: int
     season: str
     season_type: str
@@ -185,7 +184,6 @@ class NFLState(NamedTuple):
         date_format = "%Y-%m-%d"
         return NFLState(
             data["display_week"],
-            data["week"],
             data["season"],
             data["season_type"],
             data["season_has_scores"],
