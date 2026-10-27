@@ -44,7 +44,7 @@ async function loadCounts() {
     const orderedSeasons = [...seasons].sort((a, b) => Number(a) - Number(b));
     const latestSeason = orderedSeasons.at(-1);
     const latestWeek = Math.max(...records.filter((record) => String(record.Season) === latestSeason).map((record) => record.Week));
-    document.getElementById("chart-heading").textContent = `🍺 Loser Counts · Through ${latestSeason}, Week ${latestWeek}`;
+    document.getElementById("chart-heading").textContent = `🍺 Loser Stats · Thru ${latestSeason}, Week ${latestWeek}`;
     for (const [, player] of entries) {
       for (const weeks of player.weeks.values()) weeks.sort((a, b) => a - b);
     }
