@@ -1,0 +1,19 @@
+-- +goose Up
+ALTER TABLE Projections
+ADD COLUMN JSONData TEXT DEFAULT NULL;
+
+ALTER TABLE Projections
+ADD COLUMN PointsNoTDs REAL DEFAULT NULL;
+
+ALTER TABLE Projections
+ADD COLUMN TDStats TEXT DEFAULT NULL;
+
+-- +goose Down
+ALTER TABLE Projections
+DROP COLUMN TDStats;
+
+ALTER TABLE Projections
+DROP COLUMN PointsNoTDs;
+
+ALTER TABLE Projections
+DROP COLUMN JSONData;
