@@ -1,7 +1,5 @@
-/refs
-/__pycache__/
-/__pycache__/*
-/venv
+refs
+venv
 .python-version
-*__pycache__/
-*.env
+__pycache__
+.env
