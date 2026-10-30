@@ -1,0 +1,19 @@
+-- +goose Up
+ALTER TABLE PlayerHistory
+ADD COLUMN JSONData TEXT DEFAULT NULL;
+
+ALTER TABLE PlayerHistory
+ADD COLUMN PointsNoTDs REAL DEFAULT NULL;
+
+ALTER TABLE PlayerHistory
+ADD COLUMN TDStats TEXT DEFAULT NULL;
+
+-- +goose Down
+ALTER TABLE PlayerHistory
+DROP COLUMN TDStats;
+
+ALTER TABLE PlayerHistory
+DROP COLUMN PointsNoTDs;
+
+ALTER TABLE PlayerHistory
+DROP COLUMN JSONData;

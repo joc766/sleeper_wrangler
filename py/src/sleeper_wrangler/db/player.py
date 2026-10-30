@@ -51,3 +51,8 @@ def create_players(conn: sqlite3.Connection, data: list[CreatePlayerParams]):
     """
     with conn:
         conn.executemany(player_qry, data)
+
+
+def select_distinct_players(conn: sqlite3.Connection):
+    players_query = "SELECT DISTINCT p.PlayerID FROM Player p JOIN MatchupRosterPlayer mrp on p.PlayerID = mrp.PlayerID"
+    return [row[0] for row in conn.execute(players_query).fetchall()]
