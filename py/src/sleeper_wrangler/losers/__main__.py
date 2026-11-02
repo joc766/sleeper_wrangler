@@ -56,7 +56,6 @@ weekly_projections = {
     username: data.projected_points for username, data in user_week_data.items()
 }
 
-# TODO: move insertion to LoserProjections to server?
 projection_data = {
     "projections": loser_probs,
     "avatars": avatars,
