@@ -43,6 +43,7 @@ def load_projections(conn: sqlite3.Connection, season: str, week: int):
 if __name__ == "__main__":
     conn = sleeper_connect()
 
-    for season in ["2022", "2023", "2024", "2025", "2026"]:
+    # for season in ["2022", "2023", "2024", "2025", "2026"]:
+    for season in ["2024", "2025", "2026"]:
         for week in range(1, 19):
             load_projections(conn, season, week)

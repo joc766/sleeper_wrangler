@@ -53,4 +53,5 @@ def load_player_history(conn: sqlite3.Connection, season: str):
 
 if __name__ == "__main__":
     conn = sleeper_connect()
-    load_player_history(conn, "2022")
+    for season in ["2024", "2025", "2026"]:
+        load_player_history(conn, season)

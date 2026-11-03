@@ -1,4 +1,5 @@
 import sqlite3
+from typing import NamedTuple
 
 
 def select_teams_and_starters(conn: sqlite3.Connection, season: str, week: int):
@@ -89,3 +90,132 @@ def select_historical_performances(conn: sqlite3.Connection, player_ids: list[st
                 WHERE ph.PtsHalfPPR IS NOT NULL
             AND proj.PointsHalfPPR IS NOT NULL
         """).fetchall()
+
+
+def select_teams_and_starters_enhanced(
+    conn: sqlite3.Connection, league_id: str, week: int
+):
+    with conn:
+        return conn.execute(
+            """
+            SELECT
+                u.UserName,
+                u.Avatar,
+                r.TeamName,
+                mr.MatchupRosterID,
+                COALESCE(mr.Points, 0.0) AS TeamCurrentPoints,
+                CASE
+                    WHEN (orig_proj.PointsHalfPPR IS NULL OR orig_proj.PointsHalfPPR = 0)
+                        AND subs.SubstitutePlayerID IS NOT NULL
+                        THEN sub.PlayerID
+                    ELSE p.PlayerID
+                END AS PlayerID,
+                CASE
+                    WHEN (orig_proj.PointsHalfPPR IS NULL OR orig_proj.PointsHalfPPR = 0)
+                        AND subs.SubstitutePlayerID IS NOT NULL
+                        THEN sub.Team
+                    ELSE p.Team
+                END AS PlayerTeam,
+                CASE
+                    WHEN (orig_proj.PointsHalfPPR IS NULL OR orig_proj.PointsHalfPPR = 0)
+                        AND subs.SubstitutePlayerID IS NOT NULL
+                        THEN sub.Position
+                    ELSE p.Position
+                END AS Position,
+                CASE
+                    WHEN (orig_proj.PointsHalfPPR IS NULL OR orig_proj.PointsHalfPPR = 0)
+                        AND subs.SubstitutePlayerID IS NOT NULL
+                        THEN sub_mrp.Points
+                    ELSE mrp.Points
+                END AS CurrentPoints,
+                CASE
+                    WHEN (orig_proj.PointsHalfPPR IS NULL OR orig_proj.PointsHalfPPR = 0)
+                        AND subs.SubstitutePlayerID IS NOT NULL
+                        THEN COALESCE(sub_proj.PointsHalfPPR, 0.0)
+                    ELSE COALESCE(orig_proj.PointsHalfPPR, 0.0)
+                END AS ProjectedPoints,
+                CASE
+                    WHEN (orig_proj.PointsHalfPPR IS NULL OR orig_proj.PointsHalfPPR = 0)
+                        AND subs.SubstitutePlayerID IS NOT NULL
+                        THEN COALESCE(sub_proj.PointsNoTDs, 0.0)
+                    ELSE COALESCE(orig_proj.PointsNoTDs, 0.0)
+                END AS ProjectedPointsNoTDs,
+                CASE
+                    WHEN (orig_proj.PointsHalfPPR IS NULL OR orig_proj.PointsHalfPPR = 0)
+                        AND subs.SubstitutePlayerID IS NOT NULL
+                        THEN sub_proj.TDStats
+                    ELSE orig_proj.TDStats
+                END AS TDStats,
+                CASE
+                    WHEN (orig_proj.PointsHalfPPR IS NULL OR orig_proj.PointsHalfPPR = 0)
+                        AND subs.SubstitutePlayerID IS NOT NULL
+                        THEN sub_proj.InjuryStatus
+                    ELSE orig_proj.InjuryStatus
+                END AS InjuryStatus
+            FROM User AS u
+                JOIN Roster AS r on r.UserID = u.UserID
+                JOIN MatchupRoster AS mr ON mr.RosterCode = r.RosterCode and mr.Season = r.Season and mr.LeagueID = r.LeagueID
+                JOIN MatchupRosterPlayer AS mrp ON mrp.MatchupRosterID = mr.MatchupRosterID
+                JOIN Player p ON mrp.PlayerID = p.PlayerID
+                LEFT JOIN Projections AS orig_proj
+                    ON orig_proj.PlayerID = mrp.PlayerID
+                    AND orig_proj.Season = mr.Season
+                    AND orig_proj.Week = mr.Week
+                LEFT JOIN Autosubs AS subs
+                    ON subs.LeagueID = mr.LeagueID
+                    AND subs.Week = mr.Week
+                    AND subs.PlayerID = mrp.PlayerID
+                LEFT JOIN Player AS sub ON sub.PlayerID = subs.SubstitutePlayerID
+                LEFT JOIN Projections as sub_proj
+                    ON sub_proj.PlayerID = sub.PlayerID
+                    AND sub_proj.Season = mr.Season
+                    AND sub_proj.Week = mr.Week
+                LEFT JOIN MatchupRosterPlayer sub_mrp
+                    ON sub_mrp.MatchupRosterID = mr.MatchupRosterID
+                    AND sub_mrp.PlayerID = sub.PlayerID
+            WHERE r.LeagueID = ?
+            AND mr.Week = ?
+            AND mrp.Starter = 1;
+        """,
+            (league_id, week),
+        ).fetchall()
+
+
+class HistoricalPerformance(NamedTuple):
+    position: str
+    projected_pts: float
+    actual_pts: float
+    error: float
+    projected_pts_no_tds: float
+    error_no_tds: float
+    td_stats: str
+
+
+def select_historical_performances_enhanced(
+    conn: sqlite3.Connection, player_ids: list[str]
+) -> list[HistoricalPerformance]:
+    # placeholders = ",".join(["?"] * len(player_ids))
+    with conn:
+        results = conn.execute(
+            """
+            SELECT
+                p.[Position] as 'position',
+                proj.PointsHalfPPR AS 'projected_pts',
+                ph.PtsHalfPPR AS 'actual_pts',
+                ph.PtsHalfPPR - proj.PointsHalfPPR AS 'error',
+                proj.PointsNoTDs AS 'projected_pts_no_tds',
+                ph.PointsNoTDs - proj.PointsNoTDs AS 'error_no_tds',
+                proj.TDStats as 'td_stats'
+            FROM Projections proj
+               	JOIN Player p ON proj.PlayerID = p.PlayerID
+               	JOIN MatchupRoster mr ON proj.Season = mr.Season AND proj.Week = mr.Week
+               	JOIN MatchupRosterPlayer mrp ON mr.MatchupRosterID = mrp.MatchupRosterID AND proj.PlayerID = mrp.PlayerID
+               	JOIN PlayerHistory ph ON proj.Season = ph.Season AND proj.Week = ph.Week AND proj.PlayerID = ph.PlayerID
+                WHERE ph.PtsHalfPPR IS NOT NULL
+            AND proj.PointsHalfPPR IS NOT NULL
+        """,
+            # player_ids,
+        ).fetchall()
+
+        return [HistoricalPerformance(**dict(row)) for row in results]
+        # AND p.PlayerID IN ({placeholders})

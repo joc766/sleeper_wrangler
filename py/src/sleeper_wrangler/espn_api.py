@@ -11,7 +11,7 @@ def get_game_statuses(wk_start: date, wk_end: date) -> dict[str, float]:
     abbr_corrections = {"WSH": "WAS"}
     date_format = "%Y%m%d"
     url = f"https://site.web.api.espn.com/apis/fantasy/v2/games/ffl/games?dates={wk_start.strftime(date_format)}-{wk_end.strftime(date_format)}"
-    r = requests.get(url)
+    r = requests.get(url, timeout=5)
     r.raise_for_status()
     data = r.json()
     completion_by_team: dict[str, float] = {}

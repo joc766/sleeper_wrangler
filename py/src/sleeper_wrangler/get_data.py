@@ -98,7 +98,7 @@ def main():
                         load_matchups(conn, curr_league_id, i)
                         load_matchup_rosters(conn, curr_league_id, i)
                         load_matchup_players(conn, curr_league_id, i)
-                        time.sleep(0.5)
+                        # time.sleep(0.5)
 
                     # Calculate and insert weekly stats
                     #                     calculate_weekly_stats(conn, curr_league)

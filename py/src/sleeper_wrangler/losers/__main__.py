@@ -13,7 +13,7 @@ from sleeper_wrangler.loaders import (
 )
 from sleeper_wrangler.sleeper_api import get_nfl_state
 
-from .calc_loser_probs import calc_loser_data
+from .calc_loser_probs import SimulationMode, calc_loser_data
 
 
 def timeit(func):
@@ -47,7 +47,9 @@ load_matchup_players(conn, league_id, week)
 # load_projections(conn, league_id, week)
 
 completion_by_team = get_game_statuses(wk_start, wk_end)
-loser_probs, user_week_data = calc_loser_data(season, week, completion_by_team)
+loser_probs, user_week_data = calc_loser_data(
+    conn, league_id, week, completion_by_team, mode=SimulationMode.POISSON_TD
+)
 avatars = {username: data.avatar for username, data in user_week_data.items()}
 current_scores = {
     username: data.current_points for username, data in user_week_data.items()
@@ -56,7 +58,6 @@ weekly_projections = {
     username: data.projected_points for username, data in user_week_data.items()
 }
 
-# TODO: move insertion to LoserProjections to server?
 projection_data = {
     "projections": loser_probs,
     "avatars": avatars,
