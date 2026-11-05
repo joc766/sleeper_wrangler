@@ -6,9 +6,18 @@ const users = document.getElementById("chart-users");
 const summary = document.getElementById("chart-summary");
 let chart;
 let loading = false;
+let successfulWeekKey = null;
+let currentWeekKey = null;
+let historyViewActive = false;
 
-async function loadCounts() {
-  if (loading) return;
+async function loadCounts(force = false) {
+  if (!currentWeekKey) {
+    notice.hidden = false;
+    notice.textContent = "Waiting for the current week status…";
+    return;
+  }
+  if (loading || (!force && currentWeekKey && successfulWeekKey === currentWeekKey)) return;
+  const requestedWeekKey = currentWeekKey;
   loading = true;
   try {
     const response = await fetch("/loserCounts");
@@ -38,6 +47,9 @@ async function loadCounts() {
     );
     if (!entries.length) {
       notice.textContent = "No loser records available yet.";
+      notice.hidden = false;
+      if (!chart) results.hidden = true;
+      successfulWeekKey = requestedWeekKey;
       return;
     }
 
@@ -57,8 +69,6 @@ async function loadCounts() {
     }
     users.replaceChildren(rows);
     // summary.textContent = `${records.length} recorded losing ${records.length === 1 ? "week" : "weeks"} · ${entries.length} ${entries.length === 1 ? "manager" : "managers"}`;
-    notice.hidden = true;
-    results.hidden = false;
     const canvas = document.getElementById("losses-chart");
     canvas.parentElement.style.height = `${Math.max(320, entries.length * 48 + 100)}px`;
     chart?.destroy();
@@ -79,7 +89,7 @@ async function loadCounts() {
         maintainAspectRatio: false,
         color: "#182b45",
         font: { family: getComputedStyle(document.body).fontFamily },
-        animation: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? false : undefined,
+        animation: false,
         scales: {
           x: {
             stacked: true,
@@ -107,19 +117,40 @@ async function loadCounts() {
         },
       },
     });
+    successfulWeekKey = requestedWeekKey;
+    notice.hidden = true;
+    results.hidden = false;
   } catch {
-    results.hidden = true;
+    if (!chart) results.hidden = true;
     notice.hidden = false;
-    notice.textContent = "Could not load loser counts. Refresh the page to try again.";
+    notice.textContent = chart
+      ? "Could not refresh loser counts. Showing the last loaded chart."
+      : "Could not load loser counts. Open the Chart tab to try again.";
   } finally {
     loading = false;
+    if (historyViewActive && currentWeekKey && requestedWeekKey !== currentWeekKey && successfulWeekKey !== currentWeekKey) {
+      loadCounts();
+    }
   }
 }
+
+function calculatedWeekKey(update) {
+  if (!/^\d{4}$/.test(String(update.season)) || !Number.isInteger(update.week) || update.week < 1) {
+    return null;
+  }
+  return JSON.stringify([String(update.season), update.week + (update.is_complete ? 1 : 0)]);
+}
+
+document.addEventListener("projection-update", (event) => {
+  currentWeekKey = calculatedWeekKey(event.detail);
+  if (historyViewActive) loadCounts();
+});
 
 const projectionsToggle = document.getElementById("projections-toggle");
 const historyToggle = document.getElementById("history-toggle");
 
 function switchView(showHistory) {
+  historyViewActive = showHistory;
   document.getElementById("projections-view").hidden = showHistory;
   document.getElementById("history-view").hidden = !showHistory;
   document.querySelector("main").classList.toggle("counts-chart", showHistory);
@@ -127,7 +158,7 @@ function switchView(showHistory) {
   historyToggle.setAttribute("aria-pressed", String(showHistory));
   if (showHistory) {
     chart?.resize();
-    loadCounts();
+    loadCounts(!successfulWeekKey);
   }
 }
 

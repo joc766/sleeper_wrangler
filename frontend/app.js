@@ -103,6 +103,9 @@ events.onmessage = (event) => {
     if (typeof update.created_at !== "string" || !update.created_at.trim()) {
       throw new Error("Missing creation time");
     }
+    if (typeof update.is_complete !== "boolean") {
+      throw new Error("Invalid game completion status");
+    }
     if (!Number.isInteger(update.week) || update.week < 1) {
       throw new Error("Invalid week number");
     }
@@ -234,6 +237,7 @@ events.onmessage = (event) => {
     createdAt.dateTime = created.toISOString();
     createdAt.textContent = created.toLocaleString();
     hasResults = entries.length > 0;
+    document.dispatchEvent(new CustomEvent("projection-update", { detail: update }));
     results.hidden = !hasResults;
     notice.hidden = hasResults;
     notice.textContent = hasResults

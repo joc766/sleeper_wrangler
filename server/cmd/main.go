@@ -98,6 +98,12 @@ func (cfg AppConfig) handleEvents(ctx context.Context, h *hub.Hub) http.HandlerF
 			projectionData.CreatedAt = row.Createdat
 			projectionData.Week = week
 			projectionData.Season = season
+			weekStatus, err := updater.GetWeekStatus(r.Context(), cfg.Queries)
+			if err != nil {
+				http.Error(w, "unable to read stored game statuses", http.StatusInternalServerError)
+				return
+			}
+			projectionData.IsComplete = weekStatus.IsComplete
 			responseData, err := json.Marshal(projectionData)
 
 			if err != nil {
@@ -124,6 +130,12 @@ func (cfg AppConfig) handleEvents(ctx context.Context, h *hub.Hub) http.HandlerF
 				if !ok {
 					return
 				}
+				weekStatus, err := updater.GetWeekStatus(r.Context(), cfg.Queries)
+				if err != nil {
+					log.Printf("unable to read stored game statuses for event: %v", err)
+					continue
+				}
+				update.IsComplete = weekStatus.IsComplete
 				if err := writeEvent(w, update); err != nil {
 					return
 				}

@@ -12,6 +12,7 @@ type Update struct {
 	CreatedAt         string               `json:"created_at"`
 	Week              int                  `json:"week"`
 	Season            string               `json:"season"`
+	IsComplete        bool                 `json:"is_complete"`
 }
 
 type Hub struct {
