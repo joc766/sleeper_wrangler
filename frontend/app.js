@@ -1,7 +1,8 @@
 "use strict";
 
 const connection = document.getElementById("connection");
-const createdAt = document.getElementById("created-at");
+const connectionMeta = document.querySelector(".connection-meta");
+const connectionTooltip = document.getElementById("connection-tooltip");
 const weekNumber = document.getElementById("week-number");
 const notice = document.getElementById("notice");
 const results = document.getElementById("results");
@@ -14,6 +15,7 @@ const loserLossNumber = document.getElementById("loser-loss-number");
 const loserLastLoss = document.getElementById("loser-last-loss");
 let historyKey = null;
 let historyRequest;
+let latestUpdateTime = "";
 const events = new EventSource("/events");
 let hasResults = false;
 
@@ -63,24 +65,43 @@ async function updateLoserHistory(username, season, week) {
   }
 }
 
-function showConnectionSpinner() {
-  const spinner = document.createElement("span");
-  spinner.className = "connection-spinner";
-  spinner.setAttribute("aria-hidden", "true");
-  connection.replaceChildren(spinner);
+function setConnectionState(connected) {
+  connection.classList.toggle("is-connected", connected);
+  connection.classList.toggle("is-reconnecting", !connected);
+  const label = connected ? "Connected" : "Reconnecting to live updates";
+  connection.setAttribute("aria-label", latestUpdateTime
+    ? `${label}. Latest update ${latestUpdateTime}`
+    : label);
+  connectionTooltip.textContent = latestUpdateTime
+    ? `${label} · Latest update ${latestUpdateTime}`
+    : label;
 }
 
 events.onopen = () => {
-  connection.textContent = "Connected";
-  connection.setAttribute("aria-label", "Connected · Live updates");
-  connection.title = "Connected · Live updates";
+  setConnectionState(true);
 };
 
 events.onerror = () => {
-  showConnectionSpinner();
-  connection.setAttribute("aria-label", "Reconnecting to live updates");
-  connection.title = "Reconnecting to live updates";
+  setConnectionState(false);
 };
+
+connection.addEventListener("click", () => {
+  const isOpen = connectionMeta.classList.toggle("is-open");
+  connection.setAttribute("aria-expanded", String(isOpen));
+});
+
+document.addEventListener("click", (event) => {
+  if (connectionMeta.contains(event.target)) return;
+  connectionMeta.classList.remove("is-open");
+  connection.setAttribute("aria-expanded", "false");
+});
+
+connection.addEventListener("keydown", (event) => {
+  if (event.key !== "Escape") return;
+  connectionMeta.classList.remove("is-open");
+  connection.setAttribute("aria-expanded", "false");
+  connection.blur();
+});
 
 events.onmessage = (event) => {
   try {
@@ -234,18 +255,16 @@ events.onmessage = (event) => {
     users.hidden = loserDecided;
     weekNumber.textContent = `Week ${update.week}`;
     weekNumber.hidden = loserDecided;
-    createdAt.dateTime = created.toISOString();
-    createdAt.textContent = created.toLocaleString();
+    latestUpdateTime = created.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
     hasResults = entries.length > 0;
+    window.latestProjectionUpdate = update;
     document.dispatchEvent(new CustomEvent("projection-update", { detail: update }));
     results.hidden = !hasResults;
     notice.hidden = hasResults;
     notice.textContent = hasResults
       ? ""
       : "No probabilities available yet. Waiting for the next simulation…";
-    connection.textContent = "Connected";
-    connection.setAttribute("aria-label", "Connected · Live updates");
-    connection.title = "Connected · Live updates";
+    setConnectionState(true);
   } catch {
     notice.hidden = false;
     notice.textContent = hasResults

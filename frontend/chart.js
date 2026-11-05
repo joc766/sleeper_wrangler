@@ -3,7 +3,6 @@
 const notice = document.getElementById("chart-notice");
 const results = document.getElementById("chart-results");
 const users = document.getElementById("chart-users");
-const summary = document.getElementById("chart-summary");
 let chart;
 let loading = false;
 let successfulWeekKey = null;
@@ -56,7 +55,7 @@ async function loadCounts(force = false) {
     const orderedSeasons = [...seasons].sort((a, b) => Number(a) - Number(b));
     const latestSeason = orderedSeasons.at(-1);
     const latestWeek = Math.max(...records.filter((record) => String(record.Season) === latestSeason).map((record) => record.Week));
-    document.getElementById("chart-heading").textContent = `🍺 Loser Stats · Thru ${latestSeason}, Week ${latestWeek}`;
+    document.getElementById("chart-week").textContent = `Thru ${latestSeason}, Week ${latestWeek}`;
     for (const [, player] of entries) {
       for (const weeks of player.weeks.values()) weeks.sort((a, b) => a - b);
     }
@@ -72,6 +71,7 @@ async function loadCounts(force = false) {
     const canvas = document.getElementById("losses-chart");
     canvas.parentElement.style.height = `${Math.max(320, entries.length * 48 + 100)}px`;
     chart?.destroy();
+    const compactLegend = window.matchMedia("(max-width: 40rem)").matches;
     chart = new Chart(canvas, {
       type: "bar",
       data: {
@@ -100,10 +100,27 @@ async function loadCounts(force = false) {
             grid: { color: "#e7ebf1" },
             title: { display: true, text: "Total losses", color: "#58677a" },
           },
-          y: { stacked: true, grid: { display: false }, ticks: { color: "#182b45", autoSkip: false } },
+          y: {
+            stacked: true,
+            grid: { display: false },
+            ticks: {
+              color: "#182b45",
+              autoSkip: false,
+              font: { size: compactLegend ? 10 : 12 },
+            },
+          },
         },
         plugins: {
-          legend: { position: "bottom", onClick: () => {} },
+          legend: {
+            position: "bottom",
+            onClick: () => {},
+            labels: {
+              boxWidth: compactLegend ? 12 : 40,
+              boxHeight: compactLegend ? 10 : 12,
+              padding: compactLegend ? 6 : 10,
+              font: { size: compactLegend ? 10 : 12 },
+            },
+          },
           tooltip: {
             callbacks: {
               title: ([context]) => `${entries[context.dataIndex][0]} — ${context.dataset.label}`,
@@ -141,10 +158,13 @@ function calculatedWeekKey(update) {
   return JSON.stringify([String(update.season), update.week + (update.is_complete ? 1 : 0)]);
 }
 
-document.addEventListener("projection-update", (event) => {
-  currentWeekKey = calculatedWeekKey(event.detail);
+function handleProjectionUpdate(update) {
+  currentWeekKey = calculatedWeekKey(update);
   if (historyViewActive) loadCounts();
-});
+}
+
+document.addEventListener("projection-update", (event) => handleProjectionUpdate(event.detail));
+if (window.latestProjectionUpdate) handleProjectionUpdate(window.latestProjectionUpdate);
 
 const projectionsToggle = document.getElementById("projections-toggle");
 const historyToggle = document.getElementById("history-toggle");
