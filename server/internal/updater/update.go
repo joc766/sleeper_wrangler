@@ -9,7 +9,6 @@ import (
 	"log"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"time"
 
 	"github.com/joc766/sleeper/losers/server/internal/hub"
@@ -31,17 +30,10 @@ func getPythonDir() (string, error) {
 }
 
 func runPythonLoserSimulation(ctx context.Context) (hub.Update, error) {
-	// TODO: have the loser simulation store some kind of matchup object to detect changes
-	pyDir, err := getPythonDir()
-	if err != nil {
-		return hub.Update{}, err
-	}
 	cmd := exec.CommandContext(
 		ctx,
-		filepath.Join(pyDir, ".venv", "/bin", "/python"),
-		"-m", "sleeper_wrangler.losers",
+		"loser-probs",
 	)
-	cmd.Dir = pyDir
 
 	var outBuffer, stderr bytes.Buffer
 	cmd.Stdout = &outBuffer

@@ -27,59 +27,68 @@ def timeit(func):
     return wrapper
 
 
-nfl_state = get_nfl_state()
-week = nfl_state.week
-season = nfl_state.season
-wk_start: date = nfl_state.season_start_date + timedelta(days=7 * (week - 1))
-wk_end: date = nfl_state.season_start_date + timedelta(days=(7 * week) - 1)
-conn = sleeper_connect()
+# mode = SimulationMode.DEFAULT
+# if len(sys.argv) > 1 and sys.argv[1] == "poisson":
+#     mode = SimulationMode.POISSON_TD
+#
+def main():
+    nfl_state = get_nfl_state()
+    week = nfl_state.week
+    season = nfl_state.season
+    wk_start: date = nfl_state.season_start_date + timedelta(days=7 * (week - 1))
+    wk_end: date = nfl_state.season_start_date + timedelta(days=(7 * week) - 1)
+    conn = sleeper_connect()
 
-league_id = select_leagueid_from_season(conn, season)
+    league_id = select_leagueid_from_season(conn, season)
 
-# timeit(load_matchups)(conn, league_id, week)
-# timeit(load_matchup_rosters)(conn, league_id, week)
-# timeit(load_matchup_players)(conn, league_id, week)
-load_matchups(conn, league_id, week)
-load_matchup_rosters(conn, league_id, week)
-load_matchup_players(conn, league_id, week)
+    # timeit(load_matchups)(conn, league_id, week)
+    # timeit(load_matchup_rosters)(conn, league_id, week)
+    # timeit(load_matchup_players)(conn, league_id, week)
+    load_matchups(conn, league_id, week)
+    load_matchup_rosters(conn, league_id, week)
+    load_matchup_players(conn, league_id, week)
 
-# load_projections should be a cron job, doesn't need to run every time we simulate
-# load_projections(conn, league_id, week)
+    # load_projections should be a cron job, doesn't need to run every time we simulate
+    # load_projections(conn, league_id, week)
 
-completion_by_team = get_game_statuses(wk_start, wk_end)
-loser_probs, user_week_data = calc_loser_data(
-    conn, league_id, week, completion_by_team, mode=SimulationMode.POISSON_TD
-)
-avatars = {username: data.avatar for username, data in user_week_data.items()}
-current_scores = {
-    username: data.current_points for username, data in user_week_data.items()
-}
-weekly_projections = {
-    username: data.projected_points for username, data in user_week_data.items()
-}
-
-projection_data = {
-    "projections": loser_probs,
-    "avatars": avatars,
-    "current_scores": current_scores,
-    "weekly_projections": weekly_projections,
-}
-data = json.dumps(projection_data)
-with conn:
-    responseData = conn.execute(
-        """
-    INSERT INTO LoserProjections (ProjectionData, CreatedAt, GameStatus, Week, Season)
-    VALUES (?, CURRENT_TIMESTAMP, ?, ?, ?) RETURNING CreatedAt
-    """,
-        (data, json.dumps(completion_by_team), week, season),
-    ).fetchone()
-
-json_data = json.dumps(
-    {
-        **projection_data,
-        "created_at": responseData["CreatedAt"],
-        "week": week,
-        "season": season,
+    completion_by_team = get_game_statuses(wk_start, wk_end)
+    loser_probs, user_week_data = calc_loser_data(
+        conn, league_id, week, completion_by_team, mode=SimulationMode.POISSON_TD
+    )
+    avatars = {username: data.avatar for username, data in user_week_data.items()}
+    current_scores = {
+        username: data.current_points for username, data in user_week_data.items()
     }
-)
-print(json_data)
+    weekly_projections = {
+        username: data.projected_points for username, data in user_week_data.items()
+    }
+
+    projection_data = {
+        "projections": loser_probs,
+        "avatars": avatars,
+        "current_scores": current_scores,
+        "weekly_projections": weekly_projections,
+    }
+    data = json.dumps(projection_data)
+    with conn:
+        responseData = conn.execute(
+            """
+        INSERT INTO LoserProjections (ProjectionData, CreatedAt, GameStatus, Week, Season)
+        VALUES (?, CURRENT_TIMESTAMP, ?, ?, ?) RETURNING CreatedAt
+        """,
+            (data, json.dumps(completion_by_team), week, season),
+        ).fetchone()
+
+    json_data = json.dumps(
+        {
+            **projection_data,
+            "created_at": responseData["CreatedAt"],
+            "week": week,
+            "season": season,
+        }
+    )
+    print(json_data)
+
+
+if __name__ == "__main__":
+    main()

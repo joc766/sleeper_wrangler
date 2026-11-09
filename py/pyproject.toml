@@ -13,14 +13,10 @@ dependencies = [
 ]
 
 [dependency-groups]
-dev = [
-    "pytest>=8.0.0",
-    "ipython",
-    "ipykernel>=7.3.0",
-]
+dev = ["pytest>=8.0.0", "ipython", "ipykernel>=7.3.0"]
 
 [project.scripts]
-sleeper-wrangler = "sleeper_wrangler:main"
+loser-probs = "sleeper_wrangler.losers.__main__:main"
 
 [build-system]
 requires = ["uv_build>=0.12.6,<0.13.0"]
@@ -28,9 +24,7 @@ build-backend = "uv_build"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-markers = [
-    "integration: marks tests as slow (deselect with '-m \"not slow\"')"
-]
+markers = ["integration: marks tests as slow (deselect with '-m \"not slow\"')"]
 
 [tool.ruff.lint]
 ignore = ["DTZ007"]
