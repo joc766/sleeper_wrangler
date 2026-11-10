@@ -251,6 +251,7 @@ events.onmessage = (event) => {
     loserName.textContent = loserDecided ? entries[0][0] : "";
     loserLabel.textContent = loserDecided ? `Week ${update.week} Loser` : "";
     loserCard.hidden = !loserDecided;
+    connectionMeta.hidden = loserDecided;
     updateLoserHistory(loserDecided ? entries[0][0] : null, update.season, update.week);
     users.hidden = loserDecided;
     weekNumber.textContent = `Week ${update.week}`;

@@ -15,7 +15,11 @@ async function loadCounts(force = false) {
     notice.textContent = "Waiting for the current week status…";
     return;
   }
-  if (loading || (!force && currentWeekKey && successfulWeekKey === currentWeekKey)) return;
+  if (
+    loading ||
+    (!force && currentWeekKey && successfulWeekKey === currentWeekKey)
+  )
+    return;
   const requestedWeekKey = currentWeekKey;
   loading = true;
   try {
@@ -27,13 +31,21 @@ async function loadCounts(force = false) {
     const counts = new Map();
     const seasons = new Set();
     for (const record of records) {
-      if (!record || typeof record.Username !== "string" || !record.Username.trim()) {
+      if (
+        !record ||
+        typeof record.Username !== "string" ||
+        !record.Username.trim()
+      ) {
         throw new Error("Invalid manager name");
       }
       const season = String(record.Season ?? "");
       if (!/^\d{4}$/.test(season)) throw new Error("Invalid season");
       seasons.add(season);
-      const player = counts.get(record.Username) ?? { total: 0, seasons: new Map(), weeks: new Map() };
+      const player = counts.get(record.Username) ?? {
+        total: 0,
+        seasons: new Map(),
+        weeks: new Map(),
+      };
       player.total += 1;
       player.seasons.set(season, (player.seasons.get(season) ?? 0) + 1);
       const weeks = player.weeks.get(season) ?? [];
@@ -42,7 +54,8 @@ async function loadCounts(force = false) {
       counts.set(record.Username, player);
     }
     const entries = [...counts].sort(
-      ([nameA, a], [nameB, b]) => b.total - a.total || nameA.localeCompare(nameB),
+      ([nameA, a], [nameB, b]) =>
+        b.total - a.total || nameA.localeCompare(nameB),
     );
     if (!entries.length) {
       notice.textContent = "No loser records available yet.";
@@ -54,12 +67,24 @@ async function loadCounts(force = false) {
 
     const orderedSeasons = [...seasons].sort((a, b) => Number(a) - Number(b));
     const latestSeason = orderedSeasons.at(-1);
-    const latestWeek = Math.max(...records.filter((record) => String(record.Season) === latestSeason).map((record) => record.Week));
-    document.getElementById("chart-week").textContent = `Thru ${latestSeason}, Week ${latestWeek}`;
+    const latestWeek = Math.max(
+      ...records
+        .filter((record) => String(record.Season) === latestSeason)
+        .map((record) => record.Week),
+    );
+    document.getElementById("chart-week").textContent =
+      `Through Week ${latestWeek}`;
     for (const [, player] of entries) {
       for (const weeks of player.weeks.values()) weeks.sort((a, b) => a - b);
     }
-    const colors = ["#243f65", "#6685a8", "#e99b24", "#ffe096", "#367f78", "#9a719c"];
+    const colors = [
+      "#243f65",
+      "#6685a8",
+      "#e99b24",
+      "#ffe096",
+      "#367f78",
+      "#9a719c",
+    ];
     const rows = document.createDocumentFragment();
     for (const [username, player] of entries) {
       const row = document.createElement("li");
@@ -123,10 +148,15 @@ async function loadCounts(force = false) {
           },
           tooltip: {
             callbacks: {
-              title: ([context]) => `${entries[context.dataIndex][0]} — ${context.dataset.label}`,
-              label: (context) => `${context.parsed.x} ${context.parsed.x === 1 ? "loss" : "losses"}`,
+              title: ([context]) =>
+                `${entries[context.dataIndex][0]} — ${context.dataset.label}`,
+              label: (context) =>
+                `${context.parsed.x} ${context.parsed.x === 1 ? "loss" : "losses"}`,
               afterLabel: (context) => {
-                const weeks = entries[context.dataIndex][1].weeks.get(context.dataset.label) ?? [];
+                const weeks =
+                  entries[context.dataIndex][1].weeks.get(
+                    context.dataset.label,
+                  ) ?? [];
                 return `${weeks.length === 1 ? "Week" : "Weeks"} ${weeks.join(", ")}`;
               },
             },
@@ -145,17 +175,29 @@ async function loadCounts(force = false) {
       : "Could not load loser counts. Open the Chart tab to try again.";
   } finally {
     loading = false;
-    if (historyViewActive && currentWeekKey && requestedWeekKey !== currentWeekKey && successfulWeekKey !== currentWeekKey) {
+    if (
+      historyViewActive &&
+      currentWeekKey &&
+      requestedWeekKey !== currentWeekKey &&
+      successfulWeekKey !== currentWeekKey
+    ) {
       loadCounts();
     }
   }
 }
 
 function calculatedWeekKey(update) {
-  if (!/^\d{4}$/.test(String(update.season)) || !Number.isInteger(update.week) || update.week < 1) {
+  if (
+    !/^\d{4}$/.test(String(update.season)) ||
+    !Number.isInteger(update.week) ||
+    update.week < 1
+  ) {
     return null;
   }
-  return JSON.stringify([String(update.season), update.week + (update.is_complete ? 1 : 0)]);
+  return JSON.stringify([
+    String(update.season),
+    update.week + (update.is_complete ? 1 : 0),
+  ]);
 }
 
 function handleProjectionUpdate(update) {
@@ -163,19 +205,38 @@ function handleProjectionUpdate(update) {
   if (historyViewActive) loadCounts();
 }
 
-document.addEventListener("projection-update", (event) => handleProjectionUpdate(event.detail));
-if (window.latestProjectionUpdate) handleProjectionUpdate(window.latestProjectionUpdate);
+document.addEventListener("projection-update", (event) =>
+  handleProjectionUpdate(event.detail),
+);
+if (window.latestProjectionUpdate)
+  handleProjectionUpdate(window.latestProjectionUpdate);
 
 const projectionsToggle = document.getElementById("projections-toggle");
 const historyToggle = document.getElementById("history-toggle");
 
 function switchView(showHistory) {
+  const wasHistoryActive = historyViewActive;
   historyViewActive = showHistory;
-  document.getElementById("projections-view").hidden = showHistory;
-  document.getElementById("history-view").hidden = !showHistory;
+  const projectionsView = document.getElementById("projections-view");
+  const historyView = document.getElementById("history-view");
+  projectionsView.hidden = showHistory;
+  historyView.hidden = !showHistory;
   document.querySelector("main").classList.toggle("counts-chart", showHistory);
   projectionsToggle.setAttribute("aria-pressed", String(!showHistory));
   historyToggle.setAttribute("aria-pressed", String(showHistory));
+  projectionsToggle.setAttribute("aria-selected", String(!showHistory));
+  historyToggle.setAttribute("aria-selected", String(showHistory));
+  if (showHistory !== wasHistoryActive && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    const enteringView = showHistory ? historyView : projectionsView;
+    const direction = showHistory ? 1 : -1;
+    enteringView.animate(
+      [
+        { opacity: 0.75, transform: `translateX(${direction * 28}px)` },
+        { opacity: 1, transform: "translateX(0)" },
+      ],
+      { duration: 220, easing: "ease-out" },
+    );
+  }
   if (showHistory) {
     chart?.resize();
     loadCounts(!successfulWeekKey);
@@ -184,3 +245,46 @@ function switchView(showHistory) {
 
 projectionsToggle.addEventListener("click", () => switchView(false));
 historyToggle.addEventListener("click", () => switchView(true));
+
+const views = document.querySelector("main");
+let touchStart;
+
+views.addEventListener(
+  "touchstart",
+  (event) => {
+    if (event.touches.length !== 1) {
+      touchStart = null;
+      return;
+    }
+    touchStart = { x: event.touches[0].clientX, y: event.touches[0].clientY };
+  },
+  { passive: true },
+);
+
+views.addEventListener(
+  "touchend",
+  (event) => {
+    if (!touchStart || event.changedTouches.length !== 1) return;
+    const deltaX = event.changedTouches[0].clientX - touchStart.x;
+    const deltaY = event.changedTouches[0].clientY - touchStart.y;
+    touchStart = null;
+
+    // Ignore taps, vertical scrolling, and swipes outside narrow/mobile layouts.
+    if (
+      window.matchMedia("(min-width: 48rem)").matches ||
+      Math.abs(deltaX) < 60 ||
+      Math.abs(deltaX) < Math.abs(deltaY) * 1.25
+    )
+      return;
+    switchView(deltaX < 0);
+  },
+  { passive: true },
+);
+
+views.addEventListener(
+  "touchcancel",
+  () => {
+    touchStart = null;
+  },
+  { passive: true },
+);

@@ -16,11 +16,17 @@
     </head>
     <body>
         <main>
+            <header class="site-header">
+                <h1>ymsdfootball.com</h1>
+            </header>
+            <nav class="view-toggle" aria-label="Choose view" role="tablist">
+                <button type="button" id="projections-toggle" role="tab" aria-selected="true" aria-pressed="true" aria-controls="projections-view">Tracker</button>
+                <button type="button" id="history-toggle" role="tab" aria-selected="false" aria-pressed="false" aria-controls="history-view">Chart</button>
+            </nav>
             <div id="projections-view">
             <header class="page-header">
-                <h1 id="results-heading">Tuesday Beer Tracker</h1>
                 <div class="week-row">
-                    <p id="week-number" class="week-number" aria-live="polite"></p>
+                    <h2 id="week-number" class="week-number" aria-live="polite"></h2>
                     <div class="connection-meta">
                         <button id="connection" class="connection-indicator is-reconnecting" type="button" aria-label="Connecting to live updates" aria-describedby="connection-tooltip" aria-expanded="false">
                             <span class="connection-light" aria-hidden="true"></span>
@@ -30,7 +36,7 @@
                 </div>
             </header>
             <p id="notice" role="status">Waiting for simulation results…</p>
-            <section id="results" aria-labelledby="results-heading" hidden>
+                <section id="results" aria-label="Tracker results" hidden>
                 <div id="loser-card" class="loser-card" role="status" hidden>
                     <div class="beer-glass" aria-hidden="true">
                         <div class="beer-liquid">
@@ -49,23 +55,18 @@
             </div>
             <div id="history-view" hidden>
                 <header class="page-header">
-                    <h1 id="chart-heading">Loser Stats</h1>
                     <div class="week-row">
-                        <p id="chart-week" class="week-number" aria-live="polite"></p>
+                        <h2 id="chart-week" class="week-number" aria-live="polite"></h2>
                     </div>
                 </header>
                 <p id="chart-notice" role="status">Loading loser counts…</p>
-                <section id="chart-results" aria-labelledby="chart-heading" hidden>
+                <section id="chart-results" aria-label="Loser statistics chart" hidden>
                     <div class="counts-plot">
                         <canvas id="losses-chart" role="img" aria-label="Total losses per player, split by season"></canvas>
                     </div>
                     <ul id="chart-users" class="visually-hidden"></ul>
                 </section>
             </div>
-            <nav class="view-toggle" aria-label="Choose view">
-                <button type="button" id="projections-toggle" aria-pressed="true" aria-controls="projections-view">Tracker</button>
-                <button type="button" id="history-toggle" aria-pressed="false" aria-controls="history-view">Chart</button>
-            </nav>
             <noscript
                 >Enable JavaScript to receive live simulation results.</noscript
             >
