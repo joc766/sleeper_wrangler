@@ -317,7 +317,7 @@ func run() error {
 	mux.HandleFunc("GET /chart", func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, filepath.Join(cfg.FrontendDir, "chart.html"))
 	})
-	mux.Handle("GET /", http.FileServer(http.Dir(cfg.FrontendDir)))
+	mux.Handle("GET /", frontendHandler(cfg.FrontendDir))
 
 	server := &http.Server{
 		Addr:    ":8080",

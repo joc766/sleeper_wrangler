@@ -16,7 +16,7 @@ RUN mkdir -p /app/frontend
 
 WORKDIR /app/frontend
 
-COPY ./frontend .
+COPY ./frontend/dist .
 
 
 ENV DB_PATH=/data/db.sqlite3

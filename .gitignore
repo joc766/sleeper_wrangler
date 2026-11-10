@@ -5,3 +5,5 @@ __pycache__
 .env
 .DS_Store
 sleeper
+frontend/node_modules/
+frontend/dist/

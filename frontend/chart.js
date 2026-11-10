@@ -1,4 +1,4 @@
-"use strict";
+import Chart from "chart.js/auto";
 
 const notice = document.getElementById("chart-notice");
 const results = document.getElementById("chart-results");
