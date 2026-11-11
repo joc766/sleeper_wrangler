@@ -14,7 +14,9 @@ import (
 const getProjections = `-- name: GetProjections :many
 SELECT
   PlayerID,
-  PointsHalfPPR
+  PointsHalfPPR,
+  PointsNoTDs,
+  TDStats
 FROM
   Projections
 WHERE
@@ -32,6 +34,8 @@ type GetProjectionsParams struct {
 type GetProjectionsRow struct {
 	Playerid      string
 	Pointshalfppr sql.NullFloat64
+	Pointsnotds   sql.NullFloat64
+	Tdstats       sql.NullString
 }
 
 func (q *Queries) GetProjections(ctx context.Context, arg GetProjectionsParams) ([]GetProjectionsRow, error) {
@@ -55,7 +59,12 @@ func (q *Queries) GetProjections(ctx context.Context, arg GetProjectionsParams) 
 	var items []GetProjectionsRow
 	for rows.Next() {
 		var i GetProjectionsRow
-		if err := rows.Scan(&i.Playerid, &i.Pointshalfppr); err != nil {
+		if err := rows.Scan(
+			&i.Playerid,
+			&i.Pointshalfppr,
+			&i.Pointsnotds,
+			&i.Tdstats,
+		); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
@@ -70,13 +79,15 @@ func (q *Queries) GetProjections(ctx context.Context, arg GetProjectionsParams) 
 }
 
 const upsertProjection = `-- name: UpsertProjection :exec
-INSERT INTO Projections (Date, Season, Week, PlayerID, InjuryStatus, PointsHalfPPR)
-VALUES (?, ?, ?, ?, ?, ?)
+INSERT INTO Projections (Date, Season, Week, PlayerID, InjuryStatus, PointsHalfPPR, PointsNoTDs, TDStats)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?)
 ON CONFLICT (Season, Week, PlayerID)
 DO UPDATE SET
   Date = excluded.Date,
   InjuryStatus = excluded.InjuryStatus,
-  PointsHalfPPR = excluded.PointsHalfPPR
+  PointsHalfPPR = excluded.PointsHalfPPR,
+  PointsNoTDs = excluded.PointsNoTDs,
+  TDStats = excluded.TDStats
 `
 
 type UpsertProjectionParams struct {
@@ -86,6 +97,8 @@ type UpsertProjectionParams struct {
 	Playerid      string
 	Injurystatus  interface{}
 	Pointshalfppr sql.NullFloat64
+	Pointsnotds   sql.NullFloat64
+	Tdstats       sql.NullString
 }
 
 func (q *Queries) UpsertProjection(ctx context.Context, arg UpsertProjectionParams) error {
@@ -96,6 +109,8 @@ func (q *Queries) UpsertProjection(ctx context.Context, arg UpsertProjectionPara
 		arg.Playerid,
 		arg.Injurystatus,
 		arg.Pointshalfppr,
+		arg.Pointsnotds,
+		arg.Tdstats,
 	)
 	return err
 }

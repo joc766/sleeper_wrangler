@@ -1,7 +1,9 @@
 -- name: GetProjections :many
 SELECT
   PlayerID,
-  PointsHalfPPR
+  PointsHalfPPR,
+  PointsNoTDs,
+  TDStats
 FROM
   Projections
 WHERE
@@ -10,10 +12,12 @@ WHERE
   AND PlayerID IN (sqlc.slice ('player_ids'));
 
 -- name: UpsertProjection :exec
-INSERT INTO Projections (Date, Season, Week, PlayerID, InjuryStatus, PointsHalfPPR)
-VALUES (?, ?, ?, ?, ?, ?)
+INSERT INTO Projections (Date, Season, Week, PlayerID, InjuryStatus, PointsHalfPPR, PointsNoTDs, TDStats)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?)
 ON CONFLICT (Season, Week, PlayerID)
 DO UPDATE SET
   Date = excluded.Date,
   InjuryStatus = excluded.InjuryStatus,
-  PointsHalfPPR = excluded.PointsHalfPPR;
+  PointsHalfPPR = excluded.PointsHalfPPR,
+  PointsNoTDs = excluded.PointsNoTDs,
+  TDStats = excluded.TDStats;

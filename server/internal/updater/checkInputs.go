@@ -20,6 +20,12 @@ type RosterInfo struct {
 	Points   float64
 }
 
+type projectionValues struct {
+	PointsHalfPPR float64
+	PointsNoTDs   float64
+	TDStats       string
+}
+
 type starterMap = map[int64]RosterInfo
 
 func getLatestGameStatus(ctx context.Context, queries *sqlc.Queries) (map[string]float64, error) {
@@ -139,12 +145,24 @@ func CheckNewMatchups(ctx context.Context, queries *sqlc.Queries, season string,
 	return false, nil
 }
 
-func cleanProjections(apiData []PlayerProjection, leagueSettings map[string]float64, playerIDs map[string]struct{}) map[string]float64 {
+var touchdownStatKeys = map[string]struct{}{
+	"st_td":      {},
+	"rec_td":     {},
+	"rush_td":    {},
+	"def_st_td":  {},
+	"def_td":     {},
+	"pass_td":    {},
+	"fum_rec_td": {},
+}
+
+func cleanProjections(apiData []PlayerProjection, leagueSettings map[string]float64, playerIDs map[string]struct{}) (map[string]projectionValues, error) {
 	/* Calculate projections according to league settings for only the players that we care about */
-	projections := make(map[string]float64, len(playerIDs))
+	projections := make(map[string]projectionValues, len(playerIDs))
 	for _, pp := range apiData {
 		if _, ok := playerIDs[pp.PlayerID]; ok {
 			projPoints := 0.0
+			projPointsNoTDs := 0.0
+			tdStats := make(map[string]float64)
 			// order statKeys to make projPoints determininstic given same inputs
 			statKeys := make([]string, 0, len(pp.Stats))
 			for statKey := range pp.Stats {
@@ -155,13 +173,39 @@ func cleanProjections(apiData []PlayerProjection, leagueSettings map[string]floa
 				projAmount := pp.Stats[statKey]
 				if statValue, ok := leagueSettings[statKey]; ok {
 					projPoints += statValue * projAmount
+					if _, isTD := touchdownStatKeys[statKey]; !isTD {
+						projPointsNoTDs += statValue * projAmount
+					}
+				}
+				if _, isTD := touchdownStatKeys[statKey]; isTD {
+					tdStats[statKey] = projAmount
 				}
 			}
-			projections[pp.PlayerID] = math.Trunc(projPoints*100) / 100
+			tdStatsJSON, err := json.Marshal(tdStats)
+			if err != nil {
+				return nil, fmt.Errorf("marshal TD stats for player %s: %w", pp.PlayerID, err)
+			}
+			projections[pp.PlayerID] = projectionValues{
+				PointsHalfPPR: math.Trunc(projPoints*100) / 100,
+				PointsNoTDs:   math.Trunc(projPointsNoTDs*100) / 100,
+				TDStats:       string(tdStatsJSON),
+			}
 		}
 	}
 
-	return projections
+	return projections, nil
+}
+
+func canonicalTDStats(stats string) (string, error) {
+	var decoded map[string]float64
+	if err := json.Unmarshal([]byte(stats), &decoded); err != nil {
+		return "", err
+	}
+	canonical, err := json.Marshal(decoded)
+	if err != nil {
+		return "", err
+	}
+	return string(canonical), nil
 }
 
 func getLeagueScoreSettings(ctx context.Context, queries *sqlc.Queries, leagueID string) (map[string]float64, error) {
@@ -205,7 +249,10 @@ func CheckNewProjections(ctx context.Context, database *sql.DB, queries *sqlc.Qu
 		includedPlayers[p] = struct{}{}
 	}
 
-	apiProjections := cleanProjections(apiProjectionData, leagueSettings, includedPlayers)
+	apiProjections, err := cleanProjections(apiProjectionData, leagueSettings, includedPlayers)
+	if err != nil {
+		return false, err
+	}
 
 	dbProjectionRows, err := queries.GetProjections(ctx, sqlc.GetProjectionsParams{
 		Season:    season,
@@ -215,13 +262,22 @@ func CheckNewProjections(ctx context.Context, database *sql.DB, queries *sqlc.Qu
 	if err != nil {
 		return false, err
 	}
-	dbProjections := make(map[string]float64, len(playersSlice))
+	dbProjections := make(map[string]projectionValues, len(playersSlice))
 	for _, p := range dbProjectionRows {
-		if !p.Pointshalfppr.Valid {
-			dbProjections[p.Playerid] = 0.0
-		} else {
-			dbProjections[p.Playerid] = p.Pointshalfppr.Float64
+		stored := projectionValues{TDStats: "{}"}
+		if p.Pointshalfppr.Valid {
+			stored.PointsHalfPPR = p.Pointshalfppr.Float64
 		}
+		if p.Pointsnotds.Valid {
+			stored.PointsNoTDs = p.Pointsnotds.Float64
+		}
+		if p.Tdstats.Valid && p.Tdstats.String != "" {
+			stored.TDStats, err = canonicalTDStats(p.Tdstats.String)
+			if err != nil {
+				return false, fmt.Errorf("decode stored TD stats for player %s: %w", p.Playerid, err)
+			}
+		}
+		dbProjections[p.Playerid] = stored
 	}
 
 	projectionsChanged := !maps.Equal(apiProjections, dbProjections)
@@ -238,7 +294,10 @@ func updateProjections(ctx context.Context, database *sql.DB, queries *sqlc.Quer
 	for _, projection := range apiData {
 		allPlayers[projection.PlayerID] = struct{}{}
 	}
-	projections := cleanProjections(apiData, leagueSettings, allPlayers)
+	projections, err := cleanProjections(apiData, leagueSettings, allPlayers)
+	if err != nil {
+		return err
+	}
 
 	tx, err := database.BeginTx(ctx, nil)
 	if err != nil {
@@ -264,13 +323,16 @@ func updateProjections(ctx context.Context, database *sql.DB, queries *sqlc.Quer
 		if projection.Player.InjuryStatus == "" {
 			injuryStatus = nil
 		}
+		projectionValues := projections[projection.PlayerID]
 		if err := txQueries.UpsertProjection(ctx, sqlc.UpsertProjectionParams{
 			Date:          projectionDate,
 			Season:        season,
 			Week:          int64(week),
 			Playerid:      projection.PlayerID,
 			Injurystatus:  injuryStatus,
-			Pointshalfppr: sql.NullFloat64{Float64: projections[projection.PlayerID], Valid: true},
+			Pointshalfppr: sql.NullFloat64{Float64: projectionValues.PointsHalfPPR, Valid: true},
+			Pointsnotds:   sql.NullFloat64{Float64: projectionValues.PointsNoTDs, Valid: true},
+			Tdstats:       sql.NullString{String: projectionValues.TDStats, Valid: true},
 		}); err != nil {
 			return fmt.Errorf("upsert projection for player %s: %w", projection.PlayerID, err)
 		}

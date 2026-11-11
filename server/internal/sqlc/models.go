@@ -128,6 +128,9 @@ type Playerhistory struct {
 	Season          string
 	Week            int64
 	Ptshalfppr      sql.NullFloat64
+	Jsondata        sql.NullString
+	Pointsnotds     sql.NullFloat64
+	Tdstats         sql.NullString
 }
 
 type Projection struct {
@@ -138,6 +141,9 @@ type Projection struct {
 	Playerid      string
 	Injurystatus  interface{}
 	Pointshalfppr sql.NullFloat64
+	Jsondata      sql.NullString
+	Pointsnotds   sql.NullFloat64
+	Tdstats       sql.NullString
 }
 
 type Roster struct {
