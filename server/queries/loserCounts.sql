@@ -19,7 +19,7 @@ WHERE
   AND CAST(m.Season AS INTEGER) >= @track_start_season
   AND NOT (
     m.Season = @track_start_season
-    AND m.Week <= @track_start_week
+    AND m.Week < @track_start_week
   )
   AND (
     m.Season != @current_season

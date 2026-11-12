@@ -31,7 +31,7 @@ WHERE
   AND CAST(m.Season AS INTEGER) >= ?3
   AND NOT (
     m.Season = ?3
-    AND m.Week <= ?4
+    AND m.Week < ?4
   )
   AND (
     m.Season != ?5
