@@ -16,41 +16,52 @@ type WeekStatus struct {
 	IsComplete bool
 }
 
-// IsWeekComplete uses the statuses saved with the latest simulation.
-func GetWeekStatus(ctx context.Context, queries *sqlc.Queries) (WeekStatus, error) {
-	row, err := queries.GetLatestProjection(ctx)
-	if errors.Is(err, sql.ErrNoRows) {
-		return WeekStatus{}, fmt.Errorf("LoserProjections returned no rows.")
-	}
-	if err != nil {
-		return WeekStatus{}, err
-	}
-	if !row.Season.Valid || !row.Week.Valid {
-		return WeekStatus{}, fmt.Errorf("invalid season or week returned from LoserProjections.")
-	}
+func ParseWeekStatus(row sqlc.GetLatestProjectionRow) (map[string]float64, error) {
 	var data []byte
 	switch value := row.Gamestatus.(type) {
 	case nil:
-		return WeekStatus{}, fmt.Errorf("empty game status returned from LoserProjections.")
+		return nil, fmt.Errorf("empty game status returned from LoserProjections")
 	case string:
 		data = []byte(value)
 	case []byte:
 		data = value
 	default:
-		return WeekStatus{}, fmt.Errorf("unexpected GameStatus type %T", value)
+		return nil, fmt.Errorf("unexpected GameStatus type %T", value)
 	}
 	var statuses map[string]float64
 	if err := json.Unmarshal(data, &statuses); err != nil {
-		return WeekStatus{}, fmt.Errorf("decode stored game statuses: %w", err)
+		return nil, fmt.Errorf("decode stored game statuses: %w", err)
 	}
+
+	return statuses, nil
+
+}
+
+// IsWeekComplete uses the statuses saved with the latest simulation.
+func GetWeekStatus(ctx context.Context, queries *sqlc.Queries) (WeekStatus, error) {
+	row, err := queries.GetLatestProjection(ctx)
+	if errors.Is(err, sql.ErrNoRows) {
+		return WeekStatus{}, fmt.Errorf("LoserProjections returned no rows")
+	}
+	if err != nil {
+		return WeekStatus{}, err
+	}
+	if !row.Season.Valid || !row.Week.Valid {
+		return WeekStatus{}, fmt.Errorf("invalid season or week returned from LoserProjections")
+	}
+	statuses, err := ParseWeekStatus(row)
+	if err != nil {
+		return WeekStatus{}, err
+	}
+
 	return WeekStatus{
 		Season:     row.Season.String,
 		Week:       row.Week.Int64,
-		IsComplete: allGamesComplete(statuses),
+		IsComplete: AllGamesComplete(statuses),
 	}, nil
 }
 
-func allGamesComplete(statuses map[string]float64) bool {
+func AllGamesComplete(statuses map[string]float64) bool {
 	if len(statuses) == 0 {
 		return false
 	}

@@ -9,6 +9,7 @@ type Update struct {
 	Avatars           map[UserName]string  `json:"avatars"`
 	CurrentScores     map[UserName]float64 `json:"current_scores"`
 	WeeklyProjections map[UserName]float64 `json:"weekly_projections"`
+	Incomplete        map[UserName]bool    `json:"incomplete"`
 	CreatedAt         string               `json:"created_at"`
 	Week              int                  `json:"week"`
 	Season            string               `json:"season"`

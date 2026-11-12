@@ -7,27 +7,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"os"
 	"os/exec"
 	"time"
 
 	"github.com/joc766/sleeper/losers/server/internal/hub"
 	"github.com/joc766/sleeper/losers/server/internal/sqlc"
 )
-
-func getPythonDir() (string, error) {
-	pyDir, ok := os.LookupEnv("PY_DIR")
-	if !ok {
-		return "", fmt.Errorf("set PY_DIR to the python project directory")
-	}
-
-	if info, err := os.Stat(pyDir); err != nil {
-		return "", fmt.Errorf("PY_DIR does not exist; set PY_DIR to the python project directory")
-	} else if !info.IsDir() {
-		return "", fmt.Errorf("PY_DIR must be a directory")
-	}
-	return pyDir, nil
-}
 
 func runPythonLoserSimulation(ctx context.Context) (hub.Update, error) {
 	cmd := exec.CommandContext(
@@ -40,7 +25,7 @@ func runPythonLoserSimulation(ctx context.Context) (hub.Update, error) {
 	cmd.Stderr = &stderr
 
 	if err := cmd.Run(); err != nil {
-		return hub.Update{}, fmt.Errorf("Python simulation failed: %w; stderr: %s", err, stderr.String())
+		return hub.Update{}, fmt.Errorf("python simulation failed: %w; stderr: %s", err, stderr.String())
 	}
 
 	var update hub.Update

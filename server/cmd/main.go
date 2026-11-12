@@ -67,25 +67,11 @@ func (cfg AppConfig) handleEvents(ctx context.Context, h *hub.Hub) http.HandlerF
 		}
 
 		if sqlErr == nil {
-			var storedData map[string]json.RawMessage
-			if err := json.Unmarshal([]byte(row.Projectiondata), &storedData); err != nil {
+			var projectionData hub.Update
+			if err := json.Unmarshal([]byte(row.Projectiondata), &projectionData); err != nil {
 				http.Error(w, "error unmarshalling projection data", http.StatusInternalServerError)
 				return
 			}
-			var projectionData hub.Update
-			if _, hasEnvelope := storedData["projections"]; hasEnvelope {
-				if err := json.Unmarshal([]byte(row.Projectiondata), &projectionData); err != nil {
-					http.Error(w, "error unmarshalling projection data", http.StatusInternalServerError)
-					return
-				}
-			} else {
-				// Continue to support rows saved before projection metadata was added.
-				if err := json.Unmarshal([]byte(row.Projectiondata), &projectionData.Projections); err != nil {
-					http.Error(w, "error unmarshalling projection data", http.StatusInternalServerError)
-					return
-				}
-			}
-
 			var week int
 			if row.Week.Valid {
 				week = int(row.Week.Int64)
@@ -95,15 +81,17 @@ func (cfg AppConfig) handleEvents(ctx context.Context, h *hub.Hub) http.HandlerF
 				season = row.Season.String
 			}
 
-			projectionData.CreatedAt = row.Createdat
 			projectionData.Week = week
 			projectionData.Season = season
-			weekStatus, err := updater.GetWeekStatus(r.Context(), cfg.Queries)
+			projectionData.CreatedAt = row.Createdat
+
+			parsedStatuses, err := updater.ParseWeekStatus(row)
 			if err != nil {
-				http.Error(w, "unable to read stored game statuses", http.StatusInternalServerError)
+				http.Error(w, fmt.Sprintf("error marshaling response data: %v", err), http.StatusInternalServerError)
 				return
 			}
-			projectionData.IsComplete = weekStatus.IsComplete
+			projectionData.IsComplete = updater.AllGamesComplete(parsedStatuses)
+			projectionData.Incomplete = projectionData.Incomplete
 			responseData, err := json.Marshal(projectionData)
 
 			if err != nil {
@@ -130,6 +118,7 @@ func (cfg AppConfig) handleEvents(ctx context.Context, h *hub.Hub) http.HandlerF
 				if !ok {
 					return
 				}
+				// TODO: get rid of this call; we only need to parse isComplete from the game status
 				weekStatus, err := updater.GetWeekStatus(r.Context(), cfg.Queries)
 				if err != nil {
 					log.Printf("unable to read stored game statuses for event: %v", err)
@@ -149,7 +138,7 @@ func (cfg AppConfig) handleEvents(ctx context.Context, h *hub.Hub) http.HandlerF
 func (cfg AppConfig) handleGetLoserData(ctx context.Context) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// TODO: need a stable default to fall back to if there's no current data in /LoserProjections (although it will likely fix itself quickly)
-		// TODO: We're currently using DisplayWeek everywhere. Probably no value in using the actual Week anyway, since we can know if we need to add 1 for the chart by checking the latest game statuses ourselves anyway
+		// TODO: this call is probably unnecessary, the frontend should be handling if the week is complete or not and sending that information
 		weekStatus, err := updater.GetWeekStatus(r.Context(), cfg.Queries)
 		if err != nil {
 			http.Error(w, "unable to read stored game statuses", http.StatusInternalServerError)

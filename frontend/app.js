@@ -19,6 +19,18 @@ let latestUpdateTime = "";
 const events = new EventSource("/events");
 let hasResults = false;
 
+const lineupNote = document.createElement("p");
+lineupNote.id = "lineup-note";
+lineupNote.className = "lineup-note";
+const lineupNoteBadge = document.createElement("span");
+lineupNoteBadge.className = "incomplete-warning";
+lineupNoteBadge.textContent = "0 proj";
+const lineupNoteExplanation = document.createElement("span");
+lineupNoteExplanation.textContent = "Lineup contains players projected for 0.0 points.";
+lineupNote.append(lineupNoteBadge, lineupNoteExplanation);
+lineupNote.hidden = true;
+users.after(lineupNote);
+
 function lossHistory(records, username, season, week) {
   const previous = new Map();
   for (const record of records) {
@@ -145,12 +157,17 @@ events.onmessage = (event) => {
     const avatars = update.avatars ?? {};
     const currentScores = update.current_scores ?? {};
     const weeklyProjections = update.weekly_projections ?? {};
+    const incomplete = update.incomplete ?? {};
     if (
       avatars === null || typeof avatars !== "object" || Array.isArray(avatars) ||
       currentScores === null || typeof currentScores !== "object" || Array.isArray(currentScores) ||
-      weeklyProjections === null || typeof weeklyProjections !== "object" || Array.isArray(weeklyProjections)
+      weeklyProjections === null || typeof weeklyProjections !== "object" || Array.isArray(weeklyProjections) ||
+      incomplete === null || typeof incomplete !== "object" || Array.isArray(incomplete)
     ) {
       throw new Error("Invalid user metadata");
+    }
+    if (Object.values(incomplete).some((value) => typeof value !== "boolean")) {
+      throw new Error("Invalid incomplete lineup metadata");
     }
     if (
       entries.some(
@@ -178,6 +195,14 @@ events.onmessage = (event) => {
       const name = document.createElement("h3");
       name.className = "manager-name";
       name.textContent = username;
+
+      if (incomplete[username] === true) {
+        const warning = document.createElement("span");
+        warning.className = "incomplete-warning";
+        warning.textContent = "0 proj";
+        warning.setAttribute("aria-describedby", lineupNote.id);
+        name.append(warning);
+      }
 
       const identity = document.createElement("div");
       identity.className = "manager-identity";
@@ -254,6 +279,7 @@ events.onmessage = (event) => {
     connectionMeta.hidden = loserDecided;
     updateLoserHistory(loserDecided ? entries[0][0] : null, update.season, update.week);
     users.hidden = loserDecided;
+    lineupNote.hidden = loserDecided || !entries.some(([username]) => incomplete[username] === true);
     weekNumber.textContent = `Week ${update.week}`;
     weekNumber.hidden = loserDecided;
     latestUpdateTime = created.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });

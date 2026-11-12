@@ -37,6 +37,8 @@ class UserWeekData(NamedTuple):
     avatar: str | None
     current_points: float
     projected_points: float
+    starters: list[Player]
+    incomplete_lineup: bool
 
 
 class SimulationMode(StrEnum):
@@ -261,7 +263,7 @@ def remaining_projection(player: Player):
 
 def create_user_week_data(
     starters_by_username: dict[str, list[Player]], completion_by_team: dict[str, float]
-):
+) -> dict[str, UserWeekData]:
     return {
         username: UserWeekData(
             starters[0].avatar,
@@ -273,6 +275,8 @@ def create_user_week_data(
                 for player in starters
                 if completion_by_team.get(player.team_abbr) is not None
             ),
+            starters,
+            any(p.proj_pts == 0 for p in starters)
         )
         for username, starters in starters_by_username.items()
     }
