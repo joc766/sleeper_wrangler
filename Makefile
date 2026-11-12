@@ -1,18 +1,17 @@
-.PHONY: build build-python build-server build-frontend build-image
+IMAGE := jeoc766/sleeper
+
+.PHONY: build push run wheel
 
 TAG ?= latest
-ARCH ?= amd64
 
-build: build-python build-server build-frontend
+build:
+	docker build --platform linux/amd64,linux/arm64 -t $(IMAGE):$(TAG) .
 
-build-python:
+push:
+	docker push $(IMAGE):$(TAG)
+
+run:
+	docker run --rm -v sleeper_db:/data -p 8080:8080 $(IMAGE):$(TAG)
+
+wheel:
 	cd py && uv build --wheel
-
-build-server:
-	cd server && GOOS=linux GOARCH=$(ARCH) go build -o sleeper ./cmd
-
-build-frontend:
-	cd frontend && npm run build
-
-build-image:
-	docker build --platform=linux/$(ARCH) -t jeoc766/sleeper:$(TAG) .
