@@ -3,9 +3,10 @@ IMAGE := jeoc766/sleeper
 .PHONY: build push run wheel
 
 TAG ?= latest
+PLATFORMS ?= linux/amd64,linux/arm64
 
 build:
-	docker build --platform linux/amd64,linux/arm64 -t $(IMAGE):$(TAG) .
+	docker build --platform $(PLATFORMS) -t $(IMAGE):$(TAG) .
 
 push:
 	docker push $(IMAGE):$(TAG)
