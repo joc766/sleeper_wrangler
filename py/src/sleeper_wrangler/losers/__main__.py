@@ -53,7 +53,7 @@ def main():
 
     completion_by_team = get_game_statuses(wk_start, wk_end)
     loser_probs, user_week_data = calc_loser_data(
-        conn, league_id, week, completion_by_team, mode=SimulationMode.POISSON_TD
+        conn, league_id, week, completion_by_team, mode=SimulationMode.DEFAULT
     )
     avatars = {username: data.avatar for username, data in user_week_data.items()}
     current_scores = {
