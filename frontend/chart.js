@@ -8,6 +8,7 @@ let loading = false;
 let successfulWeekKey = null;
 let currentWeekKey = null;
 let historyViewActive = false;
+let trackerScrollTop = 0;
 
 function chartTheme() {
   const styles = getComputedStyle(document.documentElement);
@@ -117,7 +118,6 @@ async function loadCounts(force = false) {
     users.replaceChildren(rows);
     // summary.textContent = `${records.length} recorded losing ${records.length === 1 ? "week" : "weeks"} · ${entries.length} ${entries.length === 1 ? "manager" : "managers"}`;
     const canvas = document.getElementById("losses-chart");
-    canvas.parentElement.style.height = `${Math.max(320, entries.length * 48 + 100)}px`;
     chart?.destroy();
     const compactLegend = window.matchMedia("(max-width: 40rem)").matches;
     chart = new Chart(canvas, {
@@ -240,11 +240,17 @@ const historyToggle = document.getElementById("history-toggle");
 
 function switchView(showHistory) {
   const wasHistoryActive = historyViewActive;
+  const content = document.querySelector(".view-content");
+  if (showHistory && !wasHistoryActive) trackerScrollTop = content.scrollTop;
   historyViewActive = showHistory;
   const projectionsView = document.getElementById("projections-view");
   const historyView = document.getElementById("history-view");
   projectionsView.hidden = showHistory;
   historyView.hidden = !showHistory;
+  content.classList.toggle("is-chart", showHistory);
+  if (showHistory !== wasHistoryActive) {
+    content.scrollTop = showHistory ? 0 : trackerScrollTop;
+  }
   projectionsToggle.setAttribute("aria-pressed", String(!showHistory));
   historyToggle.setAttribute("aria-pressed", String(showHistory));
   projectionsToggle.setAttribute("aria-selected", String(!showHistory));

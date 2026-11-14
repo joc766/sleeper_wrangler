@@ -37,6 +37,7 @@
                     <button type="button" id="history-toggle" role="tab" aria-selected="false" aria-pressed="false" aria-controls="history-view" tabindex="-1">Chart</button>
                 </nav>
             </div>
+            <div class="view-content" tabindex="0" role="region" aria-label="Tracker and chart content">
             <div id="projections-view">
             <header class="page-header">
                 <div class="week-row">
@@ -84,10 +85,11 @@
             <noscript
                 >Enable JavaScript to receive live simulation results.</noscript
             >
+            </div>
         </main>
         <dialog id="settings-dialog" class="settings-dialog" aria-labelledby="settings-title">
             <div class="settings-heading">
-                <h2 id="settings-title">Settings</h2>
+                <h2 id="settings-title" tabindex="-1" autofocus>Settings</h2>
                 <form method="dialog"><button class="settings-close" aria-label="Close settings">×</button></form>
             </div>
             <fieldset class="theme-options">
