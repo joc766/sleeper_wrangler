@@ -9,6 +9,29 @@ let successfulWeekKey = null;
 let currentWeekKey = null;
 let historyViewActive = false;
 
+function chartTheme() {
+  const styles = getComputedStyle(document.documentElement);
+  return {
+    text: styles.getPropertyValue("--text-strong").trim(),
+    muted: styles.getPropertyValue("--text-muted").trim(),
+    grid: styles.getPropertyValue("--divider").trim(),
+    accent: styles.getPropertyValue("--accent").trim(),
+  };
+}
+
+document.addEventListener("theme-change", () => {
+  if (!chart) return;
+  const theme = chartTheme();
+  chart.options.color = theme.text;
+  chart.options.scales.x.ticks.color = theme.muted;
+  chart.options.scales.x.grid.color = theme.grid;
+  chart.options.scales.x.title.color = theme.muted;
+  chart.options.scales.y.ticks.color = theme.text;
+  chart.options.plugins.legend.labels.color = theme.text;
+  chart.data.datasets[0].backgroundColor = theme.accent;
+  chart.update("none");
+});
+
 async function loadCounts(force = false) {
   if (!currentWeekKey) {
     notice.hidden = false;
@@ -78,7 +101,7 @@ async function loadCounts(force = false) {
       for (const weeks of player.weeks.values()) weeks.sort((a, b) => a - b);
     }
     const colors = [
-      "#243f65",
+      chartTheme().accent,
       "#6685a8",
       "#e99b24",
       "#ffe096",
@@ -112,7 +135,7 @@ async function loadCounts(force = false) {
         indexAxis: "y",
         responsive: true,
         maintainAspectRatio: false,
-        color: "#182b45",
+        color: chartTheme().text,
         font: { family: getComputedStyle(document.body).fontFamily },
         animation: false,
         scales: {
@@ -121,15 +144,15 @@ async function loadCounts(force = false) {
             beginAtZero: true,
             // max: Math.ceil(entries[0][1].total * 1.2),
             max: entries[0][1].total,
-            ticks: { precision: 0, color: "#58677a" },
-            grid: { color: "#e7ebf1" },
-            title: { display: true, text: "Total losses", color: "#58677a" },
+            ticks: { precision: 0, color: chartTheme().muted },
+            grid: { color: chartTheme().grid },
+            title: { display: true, text: "Total losses", color: chartTheme().muted },
           },
           y: {
             stacked: true,
             grid: { display: false },
             ticks: {
-              color: "#182b45",
+              color: chartTheme().text,
               autoSkip: false,
               font: { size: compactLegend ? 10 : 12 },
             },
@@ -140,6 +163,7 @@ async function loadCounts(force = false) {
             position: "bottom",
             onClick: () => {},
             labels: {
+              color: chartTheme().text,
               boxWidth: compactLegend ? 12 : 40,
               boxHeight: compactLegend ? 10 : 12,
               padding: compactLegend ? 6 : 10,
@@ -221,7 +245,6 @@ function switchView(showHistory) {
   const historyView = document.getElementById("history-view");
   projectionsView.hidden = showHistory;
   historyView.hidden = !showHistory;
-  document.querySelector("main").classList.toggle("counts-chart", showHistory);
   projectionsToggle.setAttribute("aria-pressed", String(!showHistory));
   historyToggle.setAttribute("aria-pressed", String(showHistory));
   projectionsToggle.setAttribute("aria-selected", String(!showHistory));
@@ -249,6 +272,7 @@ projectionsToggle.addEventListener("click", () => switchView(false));
 historyToggle.addEventListener("click", () => switchView(true));
 
 document.addEventListener("keydown", (event) => {
+  if (document.querySelector("dialog[open]")) return;
   if (event.metaKey || event.ctrlKey || event.altKey) return;
   if (event.key !== "ArrowRight" && event.key !== "ArrowLeft") return;
   const target = event.target;

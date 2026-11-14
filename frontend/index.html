@@ -4,6 +4,13 @@
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta name="theme-color" content="#32435a">
+        <script>
+            try {
+                document.documentElement.dataset.theme = localStorage.getItem("theme") === "dark" ? "dark" : "light";
+            } catch {
+                document.documentElement.dataset.theme = "light";
+            }
+        </script>
         <title>ymsdfootball.com</title>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -14,12 +21,16 @@
         <link rel="stylesheet" href="/styles.css" />
         <script type="module" src="/app.js"></script>
         <script type="module" src="/chart.js"></script>
+        <script type="module" src="/settings.js"></script>
     </head>
     <body>
         <main>
             <div class="sticky-header">
                 <header class="site-header">
                     <h1>ymsdfootball.com</h1>
+                    <button type="button" id="settings-open" class="settings-menu" aria-label="Open settings" aria-haspopup="dialog" aria-controls="settings-dialog">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16" /></svg>
+                    </button>
                 </header>
                 <nav class="view-toggle" aria-label="Choose view" role="tablist">
                     <button type="button" id="projections-toggle" role="tab" aria-selected="true" aria-pressed="true" aria-controls="projections-view" tabindex="0">Tracker</button>
@@ -74,5 +85,16 @@
                 >Enable JavaScript to receive live simulation results.</noscript
             >
         </main>
+        <dialog id="settings-dialog" class="settings-dialog" aria-labelledby="settings-title">
+            <div class="settings-heading">
+                <h2 id="settings-title">Settings</h2>
+                <form method="dialog"><button class="settings-close" aria-label="Close settings">×</button></form>
+            </div>
+            <fieldset class="theme-options">
+                <legend>Appearance</legend>
+                <label><input type="radio" name="theme" value="light" checked /> Light</label>
+                <label><input type="radio" name="theme" value="dark" /> Dark</label>
+            </fieldset>
+        </dialog>
     </body>
 </html>
