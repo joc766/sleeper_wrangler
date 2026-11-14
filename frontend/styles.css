@@ -5,8 +5,8 @@
         BlinkMacSystemFont,
         "Segoe UI",
         sans-serif;
-    color: #182b45;
-    background: #f5f7fa;
+    color: #202330;
+    background: #eef1f5;
     line-height: 1.5;
     -webkit-text-size-adjust: 100%;
 }
@@ -24,7 +24,6 @@ body {
 }
 
 main {
-    max-width: 60rem;
     min-height: 100svh;
     margin: 0 auto;
     padding: 0.75rem;
@@ -83,7 +82,7 @@ h1 {
     z-index: 10;
     top: 0;
     margin: -0.75rem -0.75rem 0;
-    padding: 0 0.75rem 0.25rem;
+    padding: 0 0.75rem 0;
     background: #eef1f5;
 }
 
@@ -91,7 +90,7 @@ h1 {
     max-width: none;
     margin: 0 -0.75rem 0.25rem;
     padding: 0.625rem 0.75rem;
-    background: rgba(24, 43, 69, 0.88);
+    background: #202330;
     color: #fff;
     text-align: center;
 }
