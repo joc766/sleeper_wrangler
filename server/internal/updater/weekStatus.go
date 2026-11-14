@@ -11,9 +11,10 @@ import (
 )
 
 type WeekStatus struct {
-	Season     string
-	Week       int64
-	IsComplete bool
+	Season         string
+	Week           int64
+	IsComplete     bool
+	GameCompletion map[string]float64
 }
 
 func ParseWeekStatus(row sqlc.GetLatestProjectionRow) (map[string]float64, error) {
@@ -55,9 +56,10 @@ func GetWeekStatus(ctx context.Context, queries *sqlc.Queries) (WeekStatus, erro
 	}
 
 	return WeekStatus{
-		Season:     row.Season.String,
-		Week:       row.Week.Int64,
-		IsComplete: AllGamesComplete(statuses),
+		Season:         row.Season.String,
+		Week:           row.Week.Int64,
+		IsComplete:     AllGamesComplete(statuses),
+		GameCompletion: statuses,
 	}, nil
 }
 

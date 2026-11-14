@@ -11,6 +11,17 @@ WHERE
   AND Week = ?
   AND PlayerID IN (sqlc.slice ('player_ids'));
 
+-- name: GetPlayerInfo :many
+SELECT
+  PlayerID,
+  FullName,
+  Position,
+  Team
+FROM
+  Player
+WHERE
+  PlayerID IN (sqlc.slice ('player_ids'));
+
 -- name: UpsertProjection :exec
 INSERT INTO Projections (Date, Season, Week, PlayerID, InjuryStatus, PointsHalfPPR, PointsNoTDs, TDStats)
 VALUES (?, ?, ?, ?, ?, ?, ?, ?)

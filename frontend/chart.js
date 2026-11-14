@@ -226,6 +226,8 @@ function switchView(showHistory) {
   historyToggle.setAttribute("aria-pressed", String(showHistory));
   projectionsToggle.setAttribute("aria-selected", String(!showHistory));
   historyToggle.setAttribute("aria-selected", String(showHistory));
+  projectionsToggle.tabIndex = showHistory ? -1 : 0;
+  historyToggle.tabIndex = showHistory ? 0 : -1;
   if (showHistory !== wasHistoryActive && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
     const enteringView = showHistory ? historyView : projectionsView;
     const direction = showHistory ? 1 : -1;
@@ -245,6 +247,23 @@ function switchView(showHistory) {
 
 projectionsToggle.addEventListener("click", () => switchView(false));
 historyToggle.addEventListener("click", () => switchView(true));
+
+document.addEventListener("keydown", (event) => {
+  if (event.metaKey || event.ctrlKey || event.altKey) return;
+  if (event.key !== "ArrowRight" && event.key !== "ArrowLeft") return;
+  const target = event.target;
+  if (
+    target instanceof HTMLElement &&
+    (target.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName))
+  ) return;
+
+  event.preventDefault();
+  const toggle = event.key === "ArrowRight" ? historyToggle : projectionsToggle;
+  if (document.activeElement === projectionsToggle || document.activeElement === historyToggle) {
+    document.activeElement.blur();
+  }
+  toggle.click();
+});
 
 const views = document.querySelector("main");
 let touchStart;

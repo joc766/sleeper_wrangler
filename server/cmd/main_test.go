@@ -40,6 +40,7 @@ func TestEventsCancellation(t *testing.T) {
 				t.Fatal(err)
 			}
 			queries := sqlc.New(database)
+			cfg := AppConfig{Queries: queries}
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
 			h := hub.NewHub()
@@ -50,7 +51,7 @@ func TestEventsCancellation(t *testing.T) {
 			w := &flushRecorder{httptest.NewRecorder(), make(chan struct{}, 1)}
 			done := make(chan struct{})
 			go func() {
-				cfg.handleEvents(ctx, queries, h)(w, r)
+				cfg.handleEvents(ctx, h)(w, r)
 				close(done)
 			}()
 			select {

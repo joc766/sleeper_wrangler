@@ -65,6 +65,9 @@ def main():
     incomplete_lineups = {
         username: data.incomplete_lineup for username, data in user_week_data.items()
     }
+    active_starters = {
+        username: data.active_starters for username, data in user_week_data.items()
+    }
 
     projection_data = {
         "projections": loser_probs,
@@ -72,6 +75,7 @@ def main():
         "current_scores": current_scores,
         "weekly_projections": weekly_projections,
         "incomplete": incomplete_lineups,
+        "active_starters": active_starters,
     }
     data = json.dumps(projection_data)
     with conn:

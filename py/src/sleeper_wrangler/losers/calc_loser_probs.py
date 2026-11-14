@@ -37,7 +37,7 @@ class UserWeekData(NamedTuple):
     avatar: str | None
     current_points: float
     projected_points: float
-    starters: list[Player]
+    active_starters: dict[str, float]
     incomplete_lineup: bool
 
 
@@ -275,8 +275,13 @@ def create_user_week_data(
                 for player in starters
                 if completion_by_team.get(player.team_abbr) is not None
             ),
-            starters,
-            any(p.proj_pts == 0 for p in starters)
+            {
+                p.player_id: p.curr_pts
+                for p in starters
+                if completion_by_team.get(p.team_abbr) is not None
+                and 0.0 < completion_by_team[p.team_abbr] < 1.0
+            },
+            any(p.proj_pts == 0 for p in starters),
         )
         for username, starters in starters_by_username.items()
     }

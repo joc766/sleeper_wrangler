@@ -3,6 +3,7 @@
     <head>
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta name="theme-color" content="#32435a">
         <title>ymsdfootball.com</title>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -16,13 +17,15 @@
     </head>
     <body>
         <main>
-            <header class="site-header">
-                <h1>ymsdfootball.com</h1>
-            </header>
-            <nav class="view-toggle" aria-label="Choose view" role="tablist">
-                <button type="button" id="projections-toggle" role="tab" aria-selected="true" aria-pressed="true" aria-controls="projections-view">Tracker</button>
-                <button type="button" id="history-toggle" role="tab" aria-selected="false" aria-pressed="false" aria-controls="history-view">Chart</button>
-            </nav>
+            <div class="sticky-header">
+                <header class="site-header">
+                    <h1>ymsdfootball.com</h1>
+                </header>
+                <nav class="view-toggle" aria-label="Choose view" role="tablist">
+                    <button type="button" id="projections-toggle" role="tab" aria-selected="true" aria-pressed="true" aria-controls="projections-view" tabindex="0">Tracker</button>
+                    <button type="button" id="history-toggle" role="tab" aria-selected="false" aria-pressed="false" aria-controls="history-view" tabindex="-1">Chart</button>
+                </nav>
+            </div>
             <div id="projections-view">
             <header class="page-header">
                 <div class="week-row">

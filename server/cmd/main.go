@@ -91,7 +91,7 @@ func (cfg AppConfig) handleEvents(ctx context.Context, h *hub.Hub) http.HandlerF
 				return
 			}
 			projectionData.IsComplete = updater.AllGamesComplete(parsedStatuses)
-			projectionData.Incomplete = projectionData.Incomplete
+			projectionData.GameCompletion = parsedStatuses
 			responseData, err := json.Marshal(projectionData)
 
 			if err != nil {
@@ -125,6 +125,7 @@ func (cfg AppConfig) handleEvents(ctx context.Context, h *hub.Hub) http.HandlerF
 					continue
 				}
 				update.IsComplete = weekStatus.IsComplete
+				update.GameCompletion = weekStatus.GameCompletion
 				if err := writeEvent(w, update); err != nil {
 					return
 				}
@@ -172,6 +173,37 @@ func (cfg AppConfig) handleGetLoserData(ctx context.Context) http.HandlerFunc {
 
 	}
 
+}
+
+func (cfg AppConfig) handleGetPlayerInfo() http.HandlerFunc {
+	type playerInfo struct {
+		FullName string `json:"full_name"`
+		Position string `json:"position"`
+		Team     string `json:"team"`
+	}
+
+	return func(w http.ResponseWriter, r *http.Request) {
+		playerIDs := r.URL.Query()["player_id"]
+		players, err := cfg.Queries.GetPlayerInfo(r.Context(), playerIDs)
+		if err != nil {
+			http.Error(w, "unable to read player info", http.StatusInternalServerError)
+			return
+		}
+
+		response := make(map[string]playerInfo, len(players))
+		for _, player := range players {
+			response[player.Playerid] = playerInfo{
+				FullName: player.Fullname,
+				Position: player.Position,
+				Team:     player.Team.String,
+			}
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		if err := json.NewEncoder(w).Encode(response); err != nil {
+			log.Printf("unable to encode player info response: %v", err)
+		}
+	}
 }
 
 func main() {
@@ -303,6 +335,7 @@ func run() error {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /events", cfg.handleEvents(ctx, subscriberHub))
 	mux.HandleFunc("GET /loserCounts", cfg.handleGetLoserData(ctx))
+	mux.HandleFunc("GET /playerInfo", cfg.handleGetPlayerInfo())
 	mux.HandleFunc("GET /chart", func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, filepath.Join(cfg.FrontendDir, "chart.html"))
 	})

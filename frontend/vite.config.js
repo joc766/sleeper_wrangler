@@ -5,6 +5,7 @@ export default defineConfig({
     proxy: {
       "/events": "http://localhost:8080",
       "/loserCounts": "http://localhost:8080",
+      "/playerInfo": "http://localhost:8080",
     },
   },
 });

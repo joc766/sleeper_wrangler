@@ -11,6 +11,63 @@ import (
 	"strings"
 )
 
+const getPlayerInfo = `-- name: GetPlayerInfo :many
+SELECT
+  PlayerID,
+  FullName,
+  Position,
+  Team
+FROM
+  Player
+WHERE
+  PlayerID IN (/*SLICE:player_ids*/?)
+`
+
+type GetPlayerInfoRow struct {
+	Playerid string
+	Fullname string
+	Position string
+	Team     sql.NullString
+}
+
+func (q *Queries) GetPlayerInfo(ctx context.Context, playerIds []string) ([]GetPlayerInfoRow, error) {
+	query := getPlayerInfo
+	var queryParams []interface{}
+	if len(playerIds) > 0 {
+		for _, v := range playerIds {
+			queryParams = append(queryParams, v)
+		}
+		query = strings.Replace(query, "/*SLICE:player_ids*/?", strings.Repeat(",?", len(playerIds))[1:], 1)
+	} else {
+		query = strings.Replace(query, "/*SLICE:player_ids*/?", "NULL", 1)
+	}
+	rows, err := q.db.QueryContext(ctx, query, queryParams...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetPlayerInfoRow
+	for rows.Next() {
+		var i GetPlayerInfoRow
+		if err := rows.Scan(
+			&i.Playerid,
+			&i.Fullname,
+			&i.Position,
+			&i.Team,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getProjections = `-- name: GetProjections :many
 SELECT
   PlayerID,
