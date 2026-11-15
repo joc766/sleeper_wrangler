@@ -11,6 +11,12 @@
     --border: #dce2ea;
     --divider: #e7ebf1;
     --accent: #243f65;
+    --chart-bar-1: #243f65;
+    --chart-bar-2: #6685a8;
+    --chart-bar-3: #e99b24;
+    --chart-bar-4: #ffe096;
+    --chart-bar-5: #367f78;
+    --chart-bar-6: #9a719c;
     --focus: #aab6c5;
     --live: #c2183a;
     --warning-border: #f0cccc;
@@ -46,6 +52,12 @@
     --border: #3b4557;
     --divider: #333d4e;
     --accent: #91b8eb;
+    --chart-bar-1: #6ea8fe;
+    --chart-bar-2: #48d6b0;
+    --chart-bar-3: #ffc266;
+    --chart-bar-4: #c39bff;
+    --chart-bar-5: #ff7f9d;
+    --chart-bar-6: #a6d86e;
     --focus: #91b8eb;
     --live: #ff6482;
     --warning-border: #75404d;
@@ -114,8 +126,16 @@ main {
 }
 
 #chart-results {
-    flex: 1 1 0;
+    flex: 0 1 var(--tracker-table-height, 100%);
     min-height: 0;
+}
+
+.tracker-height-probe {
+    position: absolute;
+    top: 0;
+    left: 0;
+    visibility: hidden;
+    pointer-events: none;
 }
 
 #chart-results .counts-plot {

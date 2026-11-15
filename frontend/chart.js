@@ -9,6 +9,42 @@ let successfulWeekKey = null;
 let currentWeekKey = null;
 let historyViewActive = false;
 let trackerScrollTop = 0;
+let heightMeasurementFrame;
+
+function measureTrackerHeight() {
+  const tracker = document.getElementById("users");
+  const content = document.querySelector(".view-content");
+  const rows = [...tracker.children].slice(0, 10);
+  if (!rows.length) return;
+
+  // Measure a collapsed copy even when Tracker is hidden or players are expanded.
+  const styles = getComputedStyle(content);
+  const availableWidth = content.clientWidth - parseFloat(styles.paddingLeft) - parseFloat(styles.paddingRight);
+  const maxWidth = parseFloat(getComputedStyle(document.getElementById("projections-view")).maxWidth);
+  const probe = tracker.cloneNode(false);
+  probe.removeAttribute("id");
+  probe.classList.add("tracker-height-probe");
+  probe.style.width = `${Math.min(availableWidth, maxWidth || availableWidth)}px`;
+  probe.setAttribute("aria-hidden", "true");
+  for (const row of rows) {
+    const copy = row.cloneNode(true);
+    copy.querySelector(".active-player-list")?.remove();
+    copy.removeAttribute("id");
+    for (const element of copy.querySelectorAll("[id]")) element.removeAttribute("id");
+    probe.append(copy);
+  }
+  document.body.append(probe);
+  // The probe contains exactly the visible ten-row table (or fewer if the
+  // tracker has fewer managers), including the leaderboard's outer border.
+  const targetHeight = probe.getBoundingClientRect().height;
+  content.style.setProperty("--tracker-table-height", `${Math.ceil(targetHeight)}px`);
+  probe.remove();
+}
+
+function scheduleTrackerMeasurement() {
+  cancelAnimationFrame(heightMeasurementFrame);
+  heightMeasurementFrame = requestAnimationFrame(measureTrackerHeight);
+}
 
 function chartTheme() {
   const styles = getComputedStyle(document.documentElement);
@@ -16,11 +52,12 @@ function chartTheme() {
     text: styles.getPropertyValue("--text-strong").trim(),
     muted: styles.getPropertyValue("--text-muted").trim(),
     grid: styles.getPropertyValue("--divider").trim(),
-    accent: styles.getPropertyValue("--accent").trim(),
+    bars: Array.from({ length: 6 }, (_, index) =>
+      styles.getPropertyValue(`--chart-bar-${index + 1}`).trim()),
   };
 }
 
-document.addEventListener("theme-change", () => {
+function refreshChartTheme() {
   if (!chart) return;
   const theme = chartTheme();
   chart.options.color = theme.text;
@@ -29,8 +66,24 @@ document.addEventListener("theme-change", () => {
   chart.options.scales.x.title.color = theme.muted;
   chart.options.scales.y.ticks.color = theme.text;
   chart.options.plugins.legend.labels.color = theme.text;
-  chart.data.datasets[0].backgroundColor = theme.accent;
-  chart.update("none");
+  chart.data.datasets.forEach((dataset, index) => {
+    dataset.backgroundColor = theme.bars[index % theme.bars.length];
+  });
+  // Chart.js 4.4 keeps shared bar colors in "none" mode. Normal updates refresh
+  // those colors; animation is already disabled in the chart configuration.
+  chart.update();
+}
+
+let themeRefreshFrame;
+function scheduleChartThemeRefresh() {
+  cancelAnimationFrame(themeRefreshFrame);
+  themeRefreshFrame = requestAnimationFrame(refreshChartTheme);
+}
+
+document.addEventListener("theme-change", scheduleChartThemeRefresh);
+window.addEventListener("pageshow", scheduleChartThemeRefresh);
+document.addEventListener("visibilitychange", () => {
+  if (!document.hidden) scheduleChartThemeRefresh();
 });
 
 async function loadCounts(force = false) {
@@ -101,14 +154,7 @@ async function loadCounts(force = false) {
     for (const [, player] of entries) {
       for (const weeks of player.weeks.values()) weeks.sort((a, b) => a - b);
     }
-    const colors = [
-      chartTheme().accent,
-      "#6685a8",
-      "#e99b24",
-      "#ffe096",
-      "#367f78",
-      "#9a719c",
-    ];
+    const colors = chartTheme().bars;
     const rows = document.createDocumentFragment();
     for (const [username, player] of entries) {
       const row = document.createElement("li");
@@ -226,6 +272,7 @@ function calculatedWeekKey(update) {
 
 function handleProjectionUpdate(update) {
   currentWeekKey = calculatedWeekKey(update);
+  scheduleTrackerMeasurement();
   if (historyViewActive) loadCounts();
 }
 
@@ -242,6 +289,7 @@ function switchView(showHistory) {
   const wasHistoryActive = historyViewActive;
   const content = document.querySelector(".view-content");
   if (showHistory && !wasHistoryActive) trackerScrollTop = content.scrollTop;
+  if (showHistory) measureTrackerHeight();
   historyViewActive = showHistory;
   const projectionsView = document.getElementById("projections-view");
   const historyView = document.getElementById("history-view");
@@ -270,6 +318,7 @@ function switchView(showHistory) {
   }
   if (showHistory) {
     chart?.resize();
+    scheduleChartThemeRefresh();
     loadCounts(!successfulWeekKey);
   }
 }
@@ -296,6 +345,8 @@ document.addEventListener("keydown", (event) => {
 });
 
 const views = document.querySelector("main");
+new ResizeObserver(scheduleTrackerMeasurement).observe(document.querySelector(".view-content"));
+document.fonts.ready.then(scheduleTrackerMeasurement);
 let touchStart;
 
 views.addEventListener(
