@@ -49,18 +49,6 @@
             "sternowins": 130.43,
             "schuler17": 96.052848
         },
-        "incomplete": {
-            "sammyteeg": true,
-            "chinodechat": false,
-            "patrickfrith": false,
-            "tharmon11": false,
-            "mslabe": false,
-            "jamirzepecki": false,
-            "cdevol": false,
-            "joc766": false,
-            "sternowins": false,
-            "schuler17": false
-        },
         "active_starters": {
             "sammyteeg": { "12481": 25.7, "11632": 4.9 },
             "chinodechat": {},
