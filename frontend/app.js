@@ -1,6 +1,7 @@
 "use strict";
 
 import week10Fixture from "./fixtures/week-10-2026.json";
+import week10LoserFixture from "./fixtures/week-10-loser.json";
 
 const connection = document.getElementById("connection");
 const connectionMeta = document.querySelector(".connection-meta");
@@ -18,7 +19,7 @@ const loserLastLoss = document.getElementById("loser-last-loss");
 let historyKey = null;
 let historyRequest;
 let latestUpdateTime = "";
-const fixtures = { "week-10-2026": week10Fixture };
+const fixtures = { "week-10-2026": week10Fixture , "week-10-loser": week10LoserFixture };
 const searchParams = new URLSearchParams(location.search);
 const fixtureParam = searchParams.get("fixture");
 const mockMode = import.meta.env.DEV && (searchParams.get("mock") === "1" || fixtureParam !== null);
