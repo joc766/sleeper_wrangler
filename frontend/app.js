@@ -65,7 +65,9 @@ function renderActivePlayers() {
       item.dataset.position = player.position;
       const thumbnail = document.createElement("img");
       thumbnail.className = "active-player-thumbnail";
-      thumbnail.src = `https://sleepercdn.com/content/nfl/players/thumb/${encodeURIComponent(player.id)}.jpg`;
+      thumbnail.src = player.position === "DEF"
+        ? `https://sleepercdn.com/images/team_logos/nfl/${encodeURIComponent(player.id.toLowerCase())}.png`
+        : `https://sleepercdn.com/content/nfl/players/thumb/${encodeURIComponent(player.id)}.jpg`;
       thumbnail.alt = "";
       thumbnail.loading = "lazy";
 
