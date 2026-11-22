@@ -17,16 +17,18 @@ function measureTrackerHeight() {
   const rows = [...tracker.children].slice(0, 10);
   if (!rows.length) return;
 
-  // Measure a collapsed copy even when Tracker is hidden or players are expanded.
+  // Always size the chart against a full ten-team table, not the current results.
   const styles = getComputedStyle(content);
   const availableWidth = content.clientWidth - parseFloat(styles.paddingLeft) - parseFloat(styles.paddingRight);
   const maxWidth = parseFloat(getComputedStyle(document.getElementById("projections-view")).maxWidth);
   const probe = tracker.cloneNode(false);
   probe.removeAttribute("id");
+  probe.removeAttribute("hidden");
   probe.classList.add("tracker-height-probe");
   probe.style.width = `${Math.min(availableWidth, maxWidth || availableWidth)}px`;
   probe.setAttribute("aria-hidden", "true");
-  for (const row of rows) {
+  for (let index = 0; index < 10; index++) {
+    const row = rows[index % rows.length];
     const copy = row.cloneNode(true);
     copy.querySelector(".active-player-list")?.remove();
     copy.removeAttribute("id");
@@ -34,8 +36,8 @@ function measureTrackerHeight() {
     probe.append(copy);
   }
   document.body.append(probe);
-  // The probe contains exactly the visible ten-row table (or fewer if the
-  // tracker has fewer managers), including the leaderboard's outer border.
+  // Include ten collapsed rows and the leaderboard's outer border, even when
+  // the live tracker has fewer managers or is hidden after a loser is decided.
   const targetHeight = probe.getBoundingClientRect().height;
   content.style.setProperty("--tracker-table-height", `${Math.ceil(targetHeight)}px`);
   probe.remove();
