@@ -49,6 +49,30 @@
             "sternowins": 130.43,
             "schuler17": 96.052848
         },
+        "yet_to_play": {
+            "sammyteeg": 7,
+            "chinodechat": 1,
+            "patrickfrith": 0,
+            "tharmon11": 3,
+            "mslabe": 2,
+            "jamirzepecki": 8,
+            "cdevol": 0,
+            "joc766": 4,
+            "sternowins": 5,
+            "schuler17": 1
+        },
+        "yet_to_play_positions": {
+            "sammyteeg": ["QB", "RB", "WR", "WR", "TE", "K", "DEF"],
+            "chinodechat": ["TE"],
+            "patrickfrith": [],
+            "tharmon11": ["RB", "WR", "DEF"],
+            "mslabe": ["QB", "K"],
+            "jamirzepecki": ["QB", "RB", "RB", "WR", "WR", "WR", "K", "DEF"],
+            "cdevol": [],
+            "joc766": ["QB", "RB", "WR", "TE"],
+            "sternowins": ["RB", "WR", "TE", "K", "DEF"],
+            "schuler17": ["DEF"]
+        },
         "active_starters": {
             "sammyteeg": { "12481": 25.7, "11632": 4.9 },
             "chinodechat": {},

@@ -1,0 +1,92 @@
+{
+    "label": "Week 10, 2026 — Pregame",
+    "update": {
+        "projections": {
+            "mslabe": 2,
+            "sternowins": 3,
+            "sammyteeg": 4,
+            "joc766": 4,
+            "jamirzepecki": 4,
+            "cdevol": 4,
+            "tharmon11": 11,
+            "patrickfrith": 15,
+            "schuler17": 21,
+            "chinodechat": 32
+        },
+        "avatars": {
+            "sammyteeg": "7308291b2025f511b1cae36286c44578",
+            "chinodechat": "ed5478c9ef85624be1bc73939b38cb09",
+            "patrickfrith": "028eac5ce2e622bea5955c90bbf6dc3b",
+            "tharmon11": "b3338675f635c2c1f42b469621d38ec6",
+            "mslabe": "ae0540b81f743791dacfd757f55706b8",
+            "jamirzepecki": "f0edbf4278f53f9425db175073df6584",
+            "cdevol": "086746f23790af89f0152ab2eaab5eca",
+            "joc766": "4f4090e5e9c3941414db40a871e3e909",
+            "sternowins": "556693562b285256a58dd679dc92ca0c",
+            "schuler17": "b2ba95d4b131b283801d60ff3bfcb510"
+        },
+        "current_scores": {
+            "sammyteeg": 0.0,
+            "chinodechat": 0.0,
+            "patrickfrith": 0.0,
+            "tharmon11": 0.0,
+            "mslabe": 0.0,
+            "jamirzepecki": 0.0,
+            "cdevol": 0.0,
+            "joc766": 0.0,
+            "sternowins": 0.0,
+            "schuler17": 0.0
+        },
+        "weekly_projections": {
+            "sammyteeg": 112.15,
+            "chinodechat": 89.18,
+            "patrickfrith": 101.13,
+            "tharmon11": 104.5,
+            "mslabe": 126.04,
+            "jamirzepecki": 111.99,
+            "cdevol": 117.79,
+            "joc766": 124.07,
+            "sternowins": 130.43,
+            "schuler17": 96.05
+        },
+        "yet_to_play": {
+            "sammyteeg": 9,
+            "chinodechat": 9,
+            "patrickfrith": 9,
+            "tharmon11": 9,
+            "mslabe": 9,
+            "jamirzepecki": 9,
+            "cdevol": 9,
+            "joc766": 9,
+            "sternowins": 9,
+            "schuler17": 9
+        },
+        "yet_to_play_positions": {
+            "sammyteeg": ["QB", "RB", "RB", "WR", "WR", "WR", "TE", "K", "DEF"],
+            "chinodechat": ["QB", "RB", "RB", "WR", "WR", "WR", "TE", "K", "DEF"],
+            "patrickfrith": ["QB", "RB", "RB", "WR", "WR", "WR", "TE", "K", "DEF"],
+            "tharmon11": ["QB", "RB", "RB", "WR", "WR", "WR", "TE", "K", "DEF"],
+            "mslabe": ["QB", "RB", "RB", "WR", "WR", "WR", "TE", "K", "DEF"],
+            "jamirzepecki": ["QB", "RB", "RB", "WR", "WR", "WR", "TE", "K", "DEF"],
+            "cdevol": ["QB", "RB", "RB", "WR", "WR", "WR", "TE", "K", "DEF"],
+            "joc766": ["QB", "RB", "RB", "WR", "WR", "WR", "TE", "K", "DEF"],
+            "sternowins": ["QB", "RB", "RB", "WR", "WR", "WR", "TE", "K", "DEF"],
+            "schuler17": ["QB", "RB", "RB", "WR", "WR", "WR", "TE", "K", "DEF"]
+        },
+        "active_starters": {},
+        "game_completion": {
+            "NYG": 0, "WAS": 0, "DET": 0, "NE": 0,
+            "ATL": 0, "KC": 0, "CLE": 0, "HOU": 0,
+            "GB": 0, "MIN": 0, "TEN": 0, "JAX": 0,
+            "IND": 0, "MIA": 0, "NO": 0, "CAR": 0,
+            "NYJ": 0, "BUF": 0, "LV": 0, "SEA": 0,
+            "ARI": 0, "LAR": 0, "DAL": 0, "SF": 0,
+            "CIN": 0, "PIT": 0, "BAL": 0, "LAC": 0
+        },
+        "created_at": "2026-11-12 17:00:00",
+        "week": 10,
+        "season": "2026",
+        "is_complete": false
+    },
+    "player_info": {}
+}

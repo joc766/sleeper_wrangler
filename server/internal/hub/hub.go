@@ -5,16 +5,18 @@ import "context"
 type UserName = string
 
 type Update struct {
-	Projections       map[UserName]float64            `json:"projections"`
-	Avatars           map[UserName]string             `json:"avatars"`
-	CurrentScores     map[UserName]float64            `json:"current_scores"`
-	WeeklyProjections map[UserName]float64            `json:"weekly_projections"`
-	ActiveStarters    map[UserName]map[string]float64 `json:"active_starters"`
-	GameCompletion    map[string]float64              `json:"game_completion"`
-	CreatedAt         string                          `json:"created_at"`
-	Week              int                             `json:"week"`
-	Season            string                          `json:"season"`
-	IsComplete        bool                            `json:"is_complete"`
+	Projections        map[UserName]float64            `json:"projections"`
+	Avatars            map[UserName]string             `json:"avatars"`
+	CurrentScores      map[UserName]float64            `json:"current_scores"`
+	WeeklyProjections  map[UserName]float64            `json:"weekly_projections"`
+	ActiveStarters     map[UserName]map[string]float64 `json:"active_starters"`
+	YetToPlay          map[UserName]int                `json:"yet_to_play"`
+	YetToPlayPositions map[UserName][]string           `json:"yet_to_play_positions"`
+	GameCompletion     map[string]float64              `json:"game_completion"`
+	CreatedAt          string                          `json:"created_at"`
+	Week               int                             `json:"week"`
+	Season             string                          `json:"season"`
+	IsComplete         bool                            `json:"is_complete"`
 }
 
 type Hub struct {

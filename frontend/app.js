@@ -2,6 +2,7 @@
 
 import week10Fixture from "./fixtures/week-10-2026.json";
 import week10LoserFixture from "./fixtures/week-10-loser.json";
+import week10PregameFixture from "./fixtures/week-10-pregame.json";
 
 const connection = document.getElementById("connection");
 const connectionMeta = document.querySelector(".connection-meta");
@@ -19,7 +20,7 @@ const loserLastLoss = document.getElementById("loser-last-loss");
 let historyKey = null;
 let historyRequest;
 let latestUpdateTime = "";
-const fixtures = { "week-10-2026": week10Fixture , "week-10-loser": week10LoserFixture };
+const fixtures = { "week-10-2026": week10Fixture , "week-10-loser": week10LoserFixture, "week-10-pregame": week10PregameFixture };
 const searchParams = new URLSearchParams(location.search);
 const fixtureParam = searchParams.get("fixture");
 const mockMode = import.meta.env.DEV && (searchParams.get("mock") === "1" || fixtureParam !== null);
@@ -314,6 +315,11 @@ const handleEventMessage = (event) => {
     const incomplete = update.incomplete ?? {};
     const nextActiveStarters = update.active_starters ?? {};
     const nextGameCompletion = update.game_completion ?? {};
+    const yetToPlay = update.yet_to_play ?? {};
+    if (typeof yetToPlay !== "object" || yetToPlay === null || Array.isArray(yetToPlay)
+      || Object.values(yetToPlay).some((count) => !Number.isInteger(count) || count < 0)) {
+      throw new Error("Invalid yet-to-play counts");
+    }
     if (
       avatars === null || typeof avatars !== "object" || Array.isArray(avatars) ||
       currentScores === null || typeof currentScores !== "object" || Array.isArray(currentScores) ||
@@ -438,11 +444,33 @@ const handleEventMessage = (event) => {
       description.className = "visually-hidden";
       description.textContent = " chance of lowest score";
       percentage.append(description);
+      const remaining = document.createElement("span");
+      remaining.className = "yet-to-play";
+      const remainingCount = yetToPlay[username] ?? 0;
+      remaining.textContent = remainingCount > 0 ? `Yet to play (${remainingCount})` : "";
+      const remainingPositions = update.yet_to_play_positions?.[username];
+      if (remainingCount > 0 && Array.isArray(remainingPositions)
+        && remainingPositions.length === remainingCount
+        && remainingPositions.every((position) => typeof position === "string")) {
+        const positions = document.createElement("span");
+        positions.className = "yet-to-play-positions";
+        positions.textContent = [...remainingPositions]
+          .sort((a, b) => {
+            const rank = (position) => {
+              const index = positionOrder.indexOf(position);
+              return index < 0 ? positionOrder.length : index;
+            };
+            return rank(a) - rank(b) || a.localeCompare(b);
+          })
+          .join(" · ");
+        remaining.append(positions);
+      }
       probability.append(bar, percentage);
       const managerHeader = document.createElement("div");
       managerHeader.className = "manager-header";
       managerHeader.append(identity, projectedPoints);
       cell.append(managerHeader, probability);
+      if (remainingCount > 0) cell.append(remaining);
       managerMain.append(rank, cell);
       row.append(managerMain);
       const playerList = document.createElement("ul");

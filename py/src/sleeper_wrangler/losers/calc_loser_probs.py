@@ -38,6 +38,8 @@ class UserWeekData(NamedTuple):
     current_points: float
     projected_points: float
     active_starters: dict[str, float]
+    yet_to_play: int
+    yet_to_play_positions: list[str]
 
 
 class SimulationMode(StrEnum):
@@ -280,6 +282,14 @@ def create_user_week_data(
                 if completion_by_team.get(p.team_abbr) is not None
                 and 0.0 < completion_by_team[p.team_abbr] < 1.0
             },
+            sum(
+                completion_by_team.get(p.team_abbr) == 0.0
+                for p in starters
+            ),
+            [
+                p.position for p in starters
+                if completion_by_team.get(p.team_abbr) == 0.0
+            ],
         )
         for username, starters in starters_by_username.items()
     }

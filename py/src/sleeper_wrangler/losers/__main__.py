@@ -72,6 +72,13 @@ def main():
         "current_scores": current_scores,
         "weekly_projections": weekly_projections,
         "active_starters": active_starters,
+        "yet_to_play": {
+            username: data.yet_to_play for username, data in user_week_data.items()
+        },
+        "yet_to_play_positions": {
+            username: data.yet_to_play_positions
+            for username, data in user_week_data.items()
+        },
     }
     data = json.dumps(projection_data)
     with conn:
