@@ -14,5 +14,8 @@ push:
 run:
 	docker run --rm -v sleeper_db:/data -p 8080:8080 $(IMAGE):$(TAG)
 
+migrations:
+	docker build --platform $(PLATFORMS) -t jeoc766/migrations:latest -f migrations.Dockerfile .
+
 wheel:
 	cd py && uv build --wheel

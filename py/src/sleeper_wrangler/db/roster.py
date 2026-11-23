@@ -25,6 +25,7 @@ class CreateRosterParms(NamedTuple):
     Losses: int
     Ties: int
     JSONData: str | None = None
+    TeamAvatar: str | None = None
 
 
 def select_rosters(conn: sqlite3.Connection, league_id: str):
@@ -37,12 +38,13 @@ def select_rosters(conn: sqlite3.Connection, league_id: str):
 
 def create_rosters(conn: sqlite3.Connection, roster_data: list[CreateRosterParms]):
     teams_qry = """
-        INSERT INTO Roster (UserID, RosterCode, LeagueID, Season, TeamName, Record, Streak, Fpts, FptsAgainst, Wins, Losses, Ties, JSONData)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO Roster (UserID, RosterCode, LeagueID, Season, TeamName, Record, Streak, Fpts, FptsAgainst, Wins, Losses, Ties, JSONData, TeamAvatar)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ON CONFLICT (UserID, LeagueID)
         DO UPDATE SET
             RosterCode = excluded.RosterCode,
             TeamName = excluded.TeamName,
+            TeamAvatar = excluded.TeamAvatar,
             Record = excluded.Record,
             Streak = excluded.Streak,
             Fpts = excluded.Fpts,

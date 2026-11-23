@@ -21,12 +21,12 @@ def parse_record(record_str):
     return wins, losses, ties
 
 
-def load_rosters(conn: sqlite3.Connection, league_id: str) -> None:
+def load_rosters(conn: sqlite3.Connection, league_id: str, *, include_team_avatars: bool) -> None:
     rosters = get_rosters(league_id)
     season = select_league_season(conn, league_id)
 
-    team_names = {
-        user["user_id"]: user["metadata"].get("team_name", "No team name")
+    team_metadata = {
+        user["user_id"]: user.get("metadata") or {}
         for user in get_league_users(league_id)
     }
 
@@ -35,7 +35,8 @@ def load_rosters(conn: sqlite3.Connection, league_id: str) -> None:
         metadata = r.get("metadata", {})
         settings = r.get("settings", {})
         user_id = r["owner_id"] if r.get("owner_id") is not None else "removed_user"
-        team_name = team_names.get(user_id, "Removed User's Team")
+        owner = team_metadata.get(user_id, {})
+        team_name = owner.get("team_name", "No team name") if user_id in team_metadata else "Removed User's Team"
         record = metadata.get("record", "")
         wins, losses, ties = parse_record(record)
         teams_data.append(
@@ -45,6 +46,7 @@ def load_rosters(conn: sqlite3.Connection, league_id: str) -> None:
                 LeagueID=league_id,
                 Season=season,
                 TeamName=team_name,
+                TeamAvatar=owner.get("avatar") if include_team_avatars else None,
                 Record=metadata.get("record", ""),
                 Streak=metadata.get("streak"),
                 Fpts=settings.get("fpts", 0.0),

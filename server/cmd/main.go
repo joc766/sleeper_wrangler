@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"maps"
 	"net/http"
 	"os"
 	"os/signal"
@@ -23,7 +24,34 @@ import (
 	"github.com/joc766/sleeper/losers/server/internal/updater"
 )
 
-func writeEvent(w io.Writer, update hub.Update) error {
+func (cfg AppConfig) writeEvent(ctx context.Context, w io.Writer, update hub.Update) error {
+	if cfg.AvatarSource == "roster" {
+		rows, err := cfg.Database.QueryContext(ctx, `
+			SELECT u.UserName, r.TeamAvatar FROM Roster r JOIN User u ON r.UserID = u.UserID
+			WHERE r.LeagueID = (
+				SELECT LeagueID FROM League WHERE MasterLeagueID = ?
+				ORDER BY Season DESC, LeagueID DESC LIMIT 1
+			) AND r.TeamAvatar IS NOT NULL AND r.TeamAvatar != ''`, cfg.MasterLeagueID)
+		if err != nil {
+			return err
+		}
+		defer rows.Close()
+		avatars := make(map[string]string, len(update.Avatars))
+		maps.Copy(avatars, update.Avatars)
+		for rows.Next() {
+			var username, avatar string
+			if err := rows.Scan(&username, &avatar); err != nil {
+				return err
+			}
+			if _, present := update.Projections[username]; present {
+				avatars[username] = avatar
+			}
+		}
+		if err := rows.Err(); err != nil {
+			return err
+		}
+		update.Avatars = avatars
+	}
 	data, err := json.Marshal(update)
 	if err != nil {
 		return err
@@ -92,13 +120,9 @@ func (cfg AppConfig) handleEvents(ctx context.Context, h *hub.Hub) http.HandlerF
 			}
 			projectionData.IsComplete = updater.AllGamesComplete(parsedStatuses)
 			projectionData.GameCompletion = parsedStatuses
-			responseData, err := json.Marshal(projectionData)
-
-			if err != nil {
-				http.Error(w, "error marshaling response data", http.StatusInternalServerError)
-				return
-			}
-			if _, err := fmt.Fprintf(w, "data: %s\n\n", responseData); err != nil {
+			if err := cfg.writeEvent(r.Context(), w, projectionData); err != nil {
+				log.Printf("unable to write initial event: %v", err)
+				http.Error(w, "unable to write initial event", http.StatusInternalServerError)
 				return
 			}
 		} else {
@@ -126,7 +150,8 @@ func (cfg AppConfig) handleEvents(ctx context.Context, h *hub.Hub) http.HandlerF
 				}
 				update.IsComplete = weekStatus.IsComplete
 				update.GameCompletion = weekStatus.GameCompletion
-				if err := writeEvent(w, update); err != nil {
+				if err := cfg.writeEvent(r.Context(), w, update); err != nil {
+					log.Printf("unable to write event: %v", err)
 					return
 				}
 				flusher.Flush()
@@ -239,6 +264,7 @@ func openDatabase() (*sql.DB, error) {
 }
 
 type AppConfig struct {
+	AvatarSource     string
 	FrontendDir      string
 	PyDir            string
 	Database         *sql.DB
@@ -251,6 +277,14 @@ type AppConfig struct {
 
 func loadConfig() (AppConfig, error) {
 	var cfg AppConfig
+	cfg.AvatarSource = os.Getenv("AVATAR_SOURCE")
+	switch cfg.AvatarSource {
+	case "":
+		cfg.AvatarSource = "roster"
+	case "roster", "user":
+	default:
+		return AppConfig{}, fmt.Errorf("AVATAR_SOURCE must be roster or user, got %q", cfg.AvatarSource)
+	}
 
 	frontendDir, err := lookupFrontendDir()
 	if err != nil {

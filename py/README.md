@@ -3,6 +3,18 @@
 Pull fantasy football league data from the Sleeper API into SQLite.
 The loader lives in `src/sleeper_wrangler/get_data.py`.
 
+### Tracker avatars
+
+The server defaults to `AVATAR_SOURCE=roster`: `/events` uses custom team
+logos from the latest season of `MASTER_LEAGUE_ID`, with profile avatars
+for managers without a team logo. Apply migration 014 (`goose up`) and run
+the league data loader to populate the logos. Later syncs also pick up
+changed or removed logos.
+
+Set `AVATAR_SOURCE=user` in the server environment and restart the server
+to use profile avatars instead. Switching modes does not require another
+sync or projection run.
+
 ## Database migrations
 
 The schema is managed by [Goose](https://github.com/pressly/goose) SQL migrations

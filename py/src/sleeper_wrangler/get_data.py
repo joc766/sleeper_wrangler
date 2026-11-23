@@ -82,7 +82,7 @@ def main():
 
                     load_league_users(conn, curr_league_id)
 
-                    load_rosters(conn, curr_league_id)
+                    load_rosters(conn, curr_league_id, include_team_avatars=curr_league_id == latest_league_id)
 
                     league_settings = json.loads(
                         select_league_settings(conn, curr_league_id)
