@@ -425,7 +425,7 @@ const handleEventMessage = (event) => {
       probability.className = "probability";
       const percentage = document.createElement("span");
       percentage.className = "percentage";
-      percentage.textContent = `${value.toFixed()}%`;
+      percentage.textContent = value.toFixed() === "0" ? "<1%" : `${value.toFixed()}%`;
 
       const bar = document.createElement("div");
       bar.className = "bar-track";
