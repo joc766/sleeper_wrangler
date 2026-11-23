@@ -93,7 +93,7 @@ function renderActivePlayers() {
       points.className = "active-player-points";
       const currentPoints = players[player.id];
       points.textContent = typeof currentPoints === "number" && Number.isFinite(currentPoints)
-        ? currentPoints.toFixed(1)
+        ? currentPoints.toFixed(2)
         : "—";
       const progress = document.createElement("div");
       progress.className = "active-player-progress";
