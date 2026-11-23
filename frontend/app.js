@@ -11,6 +11,51 @@ const weekNumber = document.getElementById("week-number");
 const notice = document.getElementById("notice");
 const results = document.getElementById("results");
 const users = document.getElementById("users");
+const trackerScroller = document.querySelector(".view-content");
+const scrollToTop = document.getElementById("scroll-to-top");
+const trackerView = document.getElementById("projections-view");
+const updateScrollToTop = () => {
+  scrollToTop.hidden = trackerView.hidden || trackerScroller.scrollTop < 100;
+};
+trackerScroller.addEventListener("scroll", updateScrollToTop, { passive: true });
+new MutationObserver(updateScrollToTop).observe(trackerView, {
+  attributes: true, attributeFilter: ["hidden"],
+});
+scrollToTop.addEventListener("click", () => {
+  trackerScroller.focus({ preventScroll: true });
+  trackerScroller.scrollTo({
+    top: 0,
+    behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth",
+  });
+});
+updateScrollToTop();
+let trackerTouchY = null;
+
+trackerScroller.addEventListener("touchstart", (event) => {
+  trackerTouchY = event.touches.length === 1 && event.target.closest("#projections-view")
+    ? event.touches[0].clientY
+    : null;
+}, { passive: true });
+
+trackerScroller.addEventListener("touchmove", (event) => {
+  if (trackerTouchY === null || event.touches.length !== 1) {
+    trackerTouchY = null;
+    return;
+  }
+  const nextY = event.touches[0].clientY;
+  const pullingDown = nextY > trackerTouchY;
+  trackerTouchY = nextY;
+  if (pullingDown && trackerScroller.scrollTop <= 0 && event.cancelable) {
+    event.preventDefault();
+  }
+}, { passive: false });
+
+for (const eventName of ["touchend", "touchcancel"]) {
+  trackerScroller.addEventListener(eventName, () => {
+    trackerTouchY = null;
+  }, { passive: true });
+}
+
 const loserCard = document.getElementById("loser-card");
 const loserName = document.getElementById("loser-name");
 const loserLabel = document.getElementById("loser-label");
@@ -472,11 +517,14 @@ const handleEventMessage = (event) => {
       cell.append(managerHeader, probability);
       if (remainingCount > 0) cell.append(remaining);
       managerMain.append(rank, cell);
-      row.append(managerMain);
+      const surface = document.createElement("div");
+      surface.className = "manager-surface";
+      surface.append(managerMain);
       const playerList = document.createElement("ul");
       playerList.className = "active-player-list";
       playerList.hidden = true;
-      row.append(playerList);
+      surface.append(playerList);
+      row.append(surface);
       rows.append(row);
     }
 

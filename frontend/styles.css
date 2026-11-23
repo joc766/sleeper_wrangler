@@ -112,6 +112,10 @@ main {
     outline-offset: -2px;
 }
 
+.view-content:has(#projections-view:not([hidden])) {
+    overscroll-behavior-y: none;
+}
+
 .view-content.is-chart {
     overflow: hidden;
 }
@@ -194,6 +198,46 @@ h1 {
     padding: 0 0.75rem 0;
     border-bottom: 1px solid var(--border);
     background: var(--page);
+}
+
+.scroll-to-top {
+    position: absolute;
+    top: calc(100% + 0.5rem);
+    right: max(0.875rem, env(safe-area-inset-right, 0px));
+    display: grid;
+    place-items: center;
+    width: 2rem;
+    height: 2rem;
+    padding: 0;
+    border: 1px solid var(--border);
+    border-radius: 50%;
+    background: var(--surface);
+    color: var(--text-muted);
+    box-shadow: 0 2px 6px rgb(0 0 0 / 12%);
+    font: inherit;
+    font-size: 1.125rem;
+    cursor: pointer;
+}
+
+.scroll-to-top:hover {
+    background: var(--surface-muted);
+}
+
+.scroll-to-top:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+@media (max-width: 640px) {
+    .scroll-to-top {
+        width: 44px;
+        height: 44px;
+    }
+
+    .scroll-to-top svg {
+        width: 22px;
+        height: 22px;
+    }
 }
 
 .site-header {
@@ -629,15 +673,19 @@ h1 {
     padding: 0;
     margin: 0;
     list-style: none;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 0.5rem;
-    overflow: hidden;
+    display: grid;
+    gap: 0.5rem;
 }
 
 .manager-card {
     padding: 0;
-    border-bottom: 1px solid var(--divider);
+}
+
+.manager-surface {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 0.5rem;
+    overflow: hidden;
 }
 
 .manager-main {
@@ -914,6 +962,7 @@ h1 {
 }
 
 .probability {
+    position: relative;
     display: flex;
     align-items: center;
     margin-top: 0;
