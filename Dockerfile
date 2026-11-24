@@ -41,6 +41,10 @@ COPY --from=web-builder /build/dist/ /app/static/
 RUN pip install --no-cache-dir /tmp/wheels/*.whl \
     && rm -rf /tmp/wheels/*.whl
 
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends sqlite3 \
+    && rm -rf /var/lib/apt/lists/*
+
 ENV DB_PATH=/data/db.sqlite3
 ENV PY_DIR=/app
 ENV FRONTEND_DIR=/app/static
