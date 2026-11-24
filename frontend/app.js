@@ -403,7 +403,7 @@ const handleEventMessage = (event) => {
     );
 
     const rows = document.createDocumentFragment();
-    for (const [index, [username, value]] of entries.entries()) {
+    for (const [username, value] of entries) {
       const row = document.createElement("li");
       row.className = "manager-card";
       row.dataset.username = username;
@@ -415,10 +415,10 @@ const handleEventMessage = (event) => {
       live.textContent = "LIVE";
       live.hidden = true;
       live.setAttribute("aria-label", "Live players. Activate row to toggle players.");
-      const rank = document.createElement("span");
-      rank.className = "rank";
-      rank.textContent = String(index + 1).padStart(2, "0");
-      rank.setAttribute("aria-hidden", "true");
+      const avatarSlot = document.createElement("span");
+      avatarSlot.className = "manager-avatar-slot";
+      avatarSlot.textContent = username.slice(0, 1).toUpperCase();
+      avatarSlot.setAttribute("aria-hidden", "true");
       const name = document.createElement("h3");
       name.className = "manager-name";
       name.textContent = username;
@@ -444,10 +444,12 @@ const handleEventMessage = (event) => {
           : `https://sleepercdn.com/avatars/${encodeURIComponent(avatarIdOrUrl)}`;
         avatar.alt = "";
         avatar.loading = "lazy";
-        avatar.addEventListener("error", () => avatar.remove(), { once: true });
-        identity.append(avatar);
+        avatar.addEventListener("error", () => {
+          avatarSlot.textContent = username.slice(0, 1).toUpperCase();
+        }, { once: true });
+        avatarSlot.replaceChildren(avatar);
       }
-      identity.append(name);
+      identity.append(avatarSlot);
 
       const projection = weeklyProjections[username];
       if (projection !== undefined && (typeof projection !== "number" || !Number.isFinite(projection))) {
@@ -467,7 +469,13 @@ const handleEventMessage = (event) => {
         typeof currentScore === "number"
           ? currentScore.toFixed(2).replace(/\.00$/, "").replace(/(\.\d)0$/, "$1")
           : "—";
-      projectedPoints.textContent = `${formattedCurrentScore} pts · ${formattedProjection} proj`;
+      const projectionValue = document.createElement("span");
+      projectionValue.className = "projection-value";
+      projectionValue.textContent = `${formattedProjection} proj`;
+      const currentValue = document.createElement("span");
+      currentValue.className = "current-value";
+      currentValue.textContent = `${formattedCurrentScore} pts`;
+      projectedPoints.append(projectionValue, currentValue);
       projectedPoints.title = `${formattedCurrentScore} current points · ${formattedProjection} projected points`;
 
       const cell = document.createElement("div");
@@ -497,9 +505,7 @@ const handleEventMessage = (event) => {
       if (remainingCount > 0 && Array.isArray(remainingPositions)
         && remainingPositions.length === remainingCount
         && remainingPositions.every((position) => typeof position === "string")) {
-        const positions = document.createElement("span");
-        positions.className = "yet-to-play-positions";
-        positions.textContent = [...remainingPositions]
+        const positions = [...remainingPositions]
           .sort((a, b) => {
             const rank = (position) => {
               const index = positionOrder.indexOf(position);
@@ -507,16 +513,17 @@ const handleEventMessage = (event) => {
             };
             return rank(a) - rank(b) || a.localeCompare(b);
           })
-          .join(" · ");
-        remaining.append(positions);
+          .join(", ");
+        remaining.textContent += `: ${positions}`;
       }
-      probability.append(bar, percentage);
       const managerHeader = document.createElement("div");
       managerHeader.className = "manager-header";
+      identity.append(percentage);
       managerHeader.append(identity, projectedPoints);
-      cell.append(managerHeader, probability);
+      probability.append(managerHeader, bar);
+      cell.append(probability, name);
       if (remainingCount > 0) cell.append(remaining);
-      managerMain.append(rank, cell);
+      managerMain.append(cell);
       const surface = document.createElement("div");
       surface.className = "manager-surface";
       surface.append(managerMain);
