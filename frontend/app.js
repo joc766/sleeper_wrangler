@@ -87,6 +87,7 @@ function renderActivePlayers() {
     const playerIDs = Object.keys(players);
     const active = playerIDs.length > 0;
     row.classList.toggle("is-expandable", active);
+    row.tabIndex = active ? 0 : -1;
     row.querySelector(".manager-live").hidden = !active;
     row.setAttribute("aria-expanded", String(active && expandedRows.has(username)));
     const list = row.querySelector(".active-player-list");

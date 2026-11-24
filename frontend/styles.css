@@ -108,8 +108,7 @@ main {
 }
 
 .view-content:focus-visible {
-    outline: 2px solid var(--accent);
-    outline-offset: -2px;
+    outline: none;
 }
 
 .view-content:has(#projections-view:not([hidden])) {
@@ -224,7 +223,7 @@ h1 {
 }
 
 .scroll-to-top:focus-visible {
-    outline: 2px solid var(--accent);
+    outline: 1px solid color-mix(in srgb, currentColor 50%, transparent);
     outline-offset: 2px;
 }
 
@@ -297,7 +296,7 @@ h1 {
 }
 
 .connection-indicator:focus-visible {
-    outline: 2px solid var(--accent);
+    outline: 1px solid color-mix(in srgb, currentColor 50%, transparent);
     outline-offset: 2px;
 }
 
@@ -348,10 +347,6 @@ h1 {
     pointer-events: auto;
     transform: translateY(0);
     visibility: visible;
-}
-
-.manager-card.is-expandable:focus-visible .manager-main {
-    background: var(--surface-muted);
 }
 
 @media (hover: hover) {
@@ -710,7 +705,7 @@ h1 {
 }
 
 .manager-card.is-expandable:focus-visible .manager-main {
-    outline: 2px solid var(--focus);
+    outline: 1px solid color-mix(in srgb, var(--text-muted) 50%, transparent);
     outline-offset: -2px;
 }
 
@@ -1067,7 +1062,7 @@ h1 {
 }
 
 .view-toggle button:focus-visible {
-    outline: 2px solid var(--accent);
+    outline: 1px solid color-mix(in srgb, currentColor 50%, transparent);
     outline-offset: 2px;
 }
 
@@ -1110,7 +1105,7 @@ h1 {
 }
 
 .settings-menu:focus-visible {
-    outline: 2px solid #fff;
+    outline: 1px solid color-mix(in srgb, currentColor 50%, transparent);
     outline-offset: -4px;
 }
 
@@ -1182,6 +1177,6 @@ h1 {
 
 .settings-close:focus-visible,
 .theme-options input:focus-visible {
-    outline: 2px solid var(--accent);
+    outline: 1px solid color-mix(in srgb, currentColor 50%, transparent);
     outline-offset: 3px;
 }
