@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <title>Football in a beer glass</title>
+  <rect width="64" height="64" rx="14" fill="#182b45"/>
+  <path d="M11 16h42l-5 36q-.5 5-6 5H22q-5.5 0-6-5z" fill="#fff3d6"/>
+  <path d="M15 22h34l-4 29q-.3 2-3 2H22q-2.7 0-3-2z" fill="#efac35"/>
+  <path d="M10 19a7 7 0 0 1 9-7 9 9 0 0 1 16-2 7 7 0 0 1 11 3 6 6 0 1 1 2 12H24v3a3 3 0 0 1-6 0v-3h-2a6 6 0 0 1-6-6z" fill="#fff3d6"/>
+  <g transform="rotate(-30 32 38)">
+    <path d="M17 38q15-18 30 0-15 18-30 0z" fill="#63321f"/>
+    <path d="M26 38h12m-8-3v6m5-6v6" fill="none" stroke="#fff3d6" stroke-width="2.3" stroke-linecap="round"/>
+  </g>
+</svg>
