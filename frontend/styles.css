@@ -730,11 +730,6 @@ h1 {
     }
 }
 
-.manager-card.is-expandable {
-    border-radius: 0.5rem;
-    box-shadow: 0 0 14px 2px color-mix(in srgb, var(--live) 35%, transparent);
-}
-
 @media (prefers-reduced-transparency: reduce), (forced-colors: active) {
     .manager-surface,
     .view-toggle,
@@ -775,10 +770,13 @@ h1 {
     align-items: center;
     gap: 0.1875rem;
     margin-left: 0.375rem;
+    padding: 0.1875rem 0.3125rem;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--live) 10%, transparent);
     vertical-align: middle;
     white-space: nowrap;
     color: var(--live);
-    font-size: 0.5rem;
+    font-size: 0.5625rem;
     font-weight: 700;
     line-height: 1;
     pointer-events: none;
@@ -795,11 +793,11 @@ h1 {
 
 @keyframes live-pulse {
     0% {
-        box-shadow: 0 0 0 1px rgba(194, 24, 58, 0.3);
+        box-shadow: 0 0 0 0 color-mix(in srgb, var(--live) 30%, transparent);
     }
     70%,
     100% {
-        box-shadow: 0 0 0 3px rgba(194, 24, 58, 0);
+        box-shadow: 0 0 0 3px transparent;
     }
 }
 

@@ -88,7 +88,10 @@ function renderActivePlayers() {
     const active = playerIDs.length > 0;
     row.classList.toggle("is-expandable", active);
     row.tabIndex = active ? 0 : -1;
-    row.querySelector(".manager-live").hidden = !active;
+    const live = row.querySelector(".manager-live");
+    live.hidden = !active;
+    live.textContent = "LIVE";
+    live.setAttribute("aria-label", `${playerIDs.length} ${playerIDs.length === 1 ? "player" : "players"} playing live. Activate row to toggle players.`);
     row.setAttribute("aria-expanded", String(active && expandedRows.has(username)));
     const list = row.querySelector(".active-player-list");
     list.replaceChildren();
