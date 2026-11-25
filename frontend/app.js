@@ -3,6 +3,7 @@
 import week10Fixture from "./fixtures/week-10-2026.json";
 import week10LoserFixture from "./fixtures/week-10-loser.json";
 import week10PregameFixture from "./fixtures/week-10-pregame.json";
+import week10InjuriesFixture from "./fixtures/week-10-injuries.json";
 
 const connection = document.getElementById("connection");
 const connectionMeta = document.querySelector(".connection-meta");
@@ -65,7 +66,7 @@ const loserLastLoss = document.getElementById("loser-last-loss");
 let historyKey = null;
 let historyRequest;
 let latestUpdateTime = "";
-const fixtures = { "week-10-2026": week10Fixture , "week-10-loser": week10LoserFixture, "week-10-pregame": week10PregameFixture };
+const fixtures = { "week-10-2026": week10Fixture , "week-10-loser": week10LoserFixture, "week-10-pregame": week10PregameFixture, "week-10-injuries": week10InjuriesFixture };
 const searchParams = new URLSearchParams(location.search);
 const fixtureParam = searchParams.get("fixture");
 const mockMode = import.meta.env.DEV && (searchParams.get("mock") === "1" || fixtureParam !== null);
@@ -73,6 +74,7 @@ const selectedFixture = fixtures[fixtureParam] ? fixtureParam : Object.keys(fixt
 const events = mockMode ? null : new EventSource("/events");
 let hasResults = false;
 let activeStarters = {};
+let injuredStarters = {};
 let gameCompletion = {};
 let activePlayerWeek = null;
 const playerInfo = new Map();
@@ -84,6 +86,10 @@ function renderActivePlayers() {
   for (const row of users.querySelectorAll(".manager-card")) {
     const username = row.dataset.username;
     const players = activeStarters[username] ?? {};
+    const injuries = Object.fromEntries(
+      Object.entries(injuredStarters[username] ?? {})
+        .filter(([id]) => Object.hasOwn(players, id))
+    );
     const playerIDs = Object.keys(players);
     const active = playerIDs.length > 0;
     row.classList.toggle("is-expandable", active);
@@ -126,6 +132,27 @@ function renderActivePlayers() {
       const name = document.createElement("span");
       name.className = "active-player-name";
       name.textContent = player.full_name;
+      if (injuries[player.id]) {
+        const badge = document.createElement("span");
+        badge.className = "injury-badge";
+        const status = injuries[player.id].trim();
+        const designation = status.toLowerCase();
+        const abbreviations = {
+          questionable: "QUES",
+          doubtful: "DOUB",
+          out: "OUT",
+          "injured reserve": "IR",
+          ir: "IR",
+          pup: "PUP",
+          suspended: "SUSP",
+          probable: "PROB",
+        };
+        badge.textContent = abbreviations[designation] ?? status.toUpperCase();
+        badge.dataset.status = badge.textContent.toLowerCase();
+        badge.title = status;
+        badge.setAttribute("aria-label", `Injury status: ${status}`);
+        name.append(" ", badge);
+      }
       const meta = document.createElement("div");
       meta.className = "active-player-meta";
       const position = document.createElement("span");
@@ -363,6 +390,14 @@ const handleEventMessage = (event) => {
     const weeklyProjections = update.weekly_projections ?? {};
     const incomplete = update.incomplete ?? {};
     const nextActiveStarters = update.active_starters ?? {};
+    const nextInjuredStarters = update.injured_starters ?? {};
+    if (typeof nextInjuredStarters !== "object" || nextInjuredStarters === null
+      || Array.isArray(nextInjuredStarters)
+      || Object.values(nextInjuredStarters).some((players) =>
+        typeof players !== "object" || players === null || Array.isArray(players)
+        || Object.values(players).some((status) => typeof status !== "string" || !status.trim()))) {
+      throw new Error("Invalid injury metadata");
+    }
     const nextGameCompletion = update.game_completion ?? {};
     const yetToPlay = update.yet_to_play ?? {};
     if (typeof yetToPlay !== "object" || yetToPlay === null || Array.isArray(yetToPlay)
@@ -383,11 +418,15 @@ const handleEventMessage = (event) => {
       throw new Error("Invalid active player metadata");
     }
     activeStarters = nextActiveStarters;
+    injuredStarters = nextInjuredStarters;
     if (Object.values(nextGameCompletion).some((value) => typeof value !== "number" || !Number.isFinite(value) || value < 0 || value > 1)) {
       throw new Error("Invalid game completion metadata");
     }
     gameCompletion = nextGameCompletion;
-    fetchActivePlayerInfo(Object.values(activeStarters).flatMap((players) => Object.keys(players)));
+    fetchActivePlayerInfo([
+      ...Object.values(activeStarters).flatMap((players) => Object.keys(players)),
+      ...Object.values(injuredStarters).flatMap((players) => Object.keys(players)),
+    ]);
     if (Object.values(incomplete).some((value) => typeof value !== "boolean")) {
       throw new Error("Invalid incomplete lineup metadata");
     }

@@ -40,6 +40,7 @@ class UserWeekData(NamedTuple):
     active_starters: dict[str, float]
     yet_to_play: int
     yet_to_play_positions: list[str]
+    injured_starters: dict[str, str]
 
 
 class SimulationMode(StrEnum):
@@ -290,6 +291,13 @@ def create_user_week_data(
                 p.position for p in starters
                 if completion_by_team.get(p.team_abbr) == 0.0
             ],
+            {
+                p.player_id: p.injury_status.strip()
+                for p in starters
+                if p.injury_status and p.injury_status.strip().casefold() not in ("", "healthy")
+                and completion_by_team.get(p.team_abbr) is not None
+                and 0.0 < completion_by_team[p.team_abbr] < 1.0
+            },
         )
         for username, starters in starters_by_username.items()
     }

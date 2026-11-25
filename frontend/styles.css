@@ -1074,6 +1074,36 @@ h1 {
     white-space: nowrap;
 }
 
+.injury-badge {
+    --injury-color: #c5354f;
+    display: inline-block;
+    color: var(--injury-color);
+    font-size: 0.5625rem;
+    font-weight: 600;
+    line-height: 1.4;
+    vertical-align: middle;
+}
+
+.injury-badge[data-status="ques"] {
+    --injury-color: #946500;
+}
+
+.injury-badge[data-status="doub"] {
+    --injury-color: #b95108;
+}
+
+:root[data-theme="dark"] .injury-badge {
+    --injury-color: #ff647c;
+}
+
+:root[data-theme="dark"] .injury-badge[data-status="ques"] {
+    --injury-color: #ffd166;
+}
+
+:root[data-theme="dark"] .injury-badge[data-status="doub"] {
+    --injury-color: #ff9f43;
+}
+
 .percentage {
     flex: 0 0 auto;
     margin-left: 0;

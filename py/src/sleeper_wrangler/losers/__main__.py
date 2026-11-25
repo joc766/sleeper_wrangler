@@ -72,6 +72,9 @@ def main():
         "current_scores": current_scores,
         "weekly_projections": weekly_projections,
         "active_starters": active_starters,
+        "injured_starters": {
+            username: data.injured_starters for username, data in user_week_data.items()
+        },
         "yet_to_play": {
             username: data.yet_to_play for username, data in user_week_data.items()
         },

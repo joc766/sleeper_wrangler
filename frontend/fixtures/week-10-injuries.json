@@ -1,0 +1,79 @@
+{
+    "label": "Week 10 — Mock injuries (illustrative)",
+    "update": {
+        "projections": {
+            "mslabe": 2,
+            "sternowins": 3,
+            "sammyteeg": 4,
+            "joc766": 4,
+            "jamirzepecki": 4,
+            "cdevol": 4,
+            "tharmon11": 11,
+            "patrickfrith": 15,
+            "schuler17": 21,
+            "chinodechat": 32
+        },
+        "avatars": {
+            "sammyteeg": "7308291b2025f511b1cae36286c44578",
+            "chinodechat": "ed5478c9ef85624be1bc73939b38cb09",
+            "patrickfrith": "028eac5ce2e622bea5955c90bbf6dc3b",
+            "tharmon11": "b3338675f635c2c1f42b469621d38ec6",
+            "mslabe": "ae0540b81f743791dacfd757f55706b8",
+            "jamirzepecki": "f0edbf4278f53f9425db175073df6584",
+            "cdevol": "086746f23790af89f0152ab2eaab5eca",
+            "joc766": "4f4090e5e9c3941414db40a871e3e909",
+            "sternowins": "556693562b285256a58dd679dc92ca0c",
+            "schuler17": "b2ba95d4b131b283801d60ff3bfcb510"
+        },
+        "current_scores": {
+            "sammyteeg": 30.6, "chinodechat": 0, "patrickfrith": 0,
+            "tharmon11": 0, "mslabe": 0, "jamirzepecki": 23.2,
+            "cdevol": 0, "joc766": 0, "sternowins": 0, "schuler17": 5.7
+        },
+        "weekly_projections": {
+            "sammyteeg": 82.15, "chinodechat": 75.18, "patrickfrith": 101.13,
+            "tharmon11": 104.5, "mslabe": 126.04, "jamirzepecki": 99.99,
+            "cdevol": 117.79, "joc766": 124.07, "sternowins": 130.43, "schuler17": 96.05
+        },
+        "yet_to_play": {
+            "sammyteeg": 7, "chinodechat": 1, "patrickfrith": 0,
+            "tharmon11": 3, "mslabe": 2, "jamirzepecki": 8,
+            "cdevol": 0, "joc766": 4, "sternowins": 5, "schuler17": 1
+        },
+        "yet_to_play_positions": {
+            "sammyteeg": ["QB", "RB", "WR", "WR", "TE", "K", "DEF"],
+            "chinodechat": ["QB"],
+            "patrickfrith": [],
+            "tharmon11": ["RB", "WR", "DEF"],
+            "mslabe": ["QB", "K"],
+            "jamirzepecki": ["QB", "RB", "RB", "WR", "WR", "WR", "K", "DEF"],
+            "cdevol": [],
+            "joc766": ["QB", "RB", "WR", "TE"],
+            "sternowins": ["RB", "WR", "TE", "K", "DEF"],
+            "schuler17": ["DEF"]
+        },
+        "active_starters": {
+            "sammyteeg": {"12481": 25.7, "11632": 4.9},
+            "jamirzepecki": {"8131": 23.2},
+            "schuler17": {"8136": 5.7}
+        },
+        "injured_starters": {
+            "sammyteeg": {"12481": "Out", "11632": "Questionable"},
+            "jamirzepecki": {"8131": "Doubtful"}
+        },
+        "game_completion": {
+            "NYG": 0.51, "WAS": 0.51, "NO": 0
+        },
+        "created_at": "2026-11-13 04:19:31",
+        "week": 10,
+        "season": "2026",
+        "is_complete": false
+    },
+    "player_info": {
+        "11632": {"full_name": "Malik Nabers", "position": "WR", "team": "NYG"},
+        "12481": {"full_name": "Cam Skattebo", "position": "RB", "team": "NYG"},
+        "8131": {"full_name": "Isaiah Likely", "position": "TE", "team": "NYG"},
+        "8136": {"full_name": "Rachaad White", "position": "RB", "team": "WAS"},
+        "4034": {"full_name": "Derek Carr", "position": "QB", "team": "NO"}
+    }
+}
