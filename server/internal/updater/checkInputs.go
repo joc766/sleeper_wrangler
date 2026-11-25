@@ -10,6 +10,7 @@ import (
 	"math"
 	"slices"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/joc766/sleeper/losers/server/internal/sqlc"
@@ -21,9 +22,18 @@ type RosterInfo struct {
 }
 
 type projectionValues struct {
+	InjuryStatus  string
 	PointsHalfPPR float64
 	PointsNoTDs   float64
 	TDStats       string
+}
+
+func normalizeInjuryStatus(status string) string {
+	status = strings.ToLower(strings.TrimSpace(status))
+	if status == "healthy" {
+		return ""
+	}
+	return status
 }
 
 type starterMap = map[int64]RosterInfo
@@ -186,6 +196,7 @@ func cleanProjections(apiData []PlayerProjection, leagueSettings map[string]floa
 				return nil, fmt.Errorf("marshal TD stats for player %s: %w", pp.PlayerID, err)
 			}
 			projections[pp.PlayerID] = projectionValues{
+				InjuryStatus:  normalizeInjuryStatus(pp.Player.InjuryStatus),
 				PointsHalfPPR: math.Trunc(projPoints*100) / 100,
 				PointsNoTDs:   math.Trunc(projPointsNoTDs*100) / 100,
 				TDStats:       string(tdStatsJSON),
@@ -245,6 +256,9 @@ func CheckNewProjections(ctx context.Context, database *sql.DB, queries *sqlc.Qu
 		Leagueid: leagueID,
 		Week:     int64(week),
 	})
+	if err != nil {
+		return false, err
+	}
 	for _, p := range playersSlice {
 		includedPlayers[p] = struct{}{}
 	}
@@ -264,7 +278,10 @@ func CheckNewProjections(ctx context.Context, database *sql.DB, queries *sqlc.Qu
 	}
 	dbProjections := make(map[string]projectionValues, len(playersSlice))
 	for _, p := range dbProjectionRows {
-		stored := projectionValues{TDStats: "{}"}
+		stored := projectionValues{
+			TDStats:      "{}",
+			InjuryStatus: normalizeInjuryStatus(p.Injurystatus),
+		}
 		if p.Pointshalfppr.Valid {
 			stored.PointsHalfPPR = p.Pointshalfppr.Float64
 		}
@@ -319,8 +336,8 @@ func updateProjections(ctx context.Context, database *sql.DB, queries *sqlc.Quer
 			projectionDate = sql.NullTime{Time: parsedDate, Valid: true}
 		}
 
-		injuryStatus := interface{}(projection.Player.InjuryStatus)
-		if projection.Player.InjuryStatus == "" {
+		injuryStatus := interface{}(strings.TrimSpace(projection.Player.InjuryStatus))
+		if normalizeInjuryStatus(projection.Player.InjuryStatus) == "" {
 			injuryStatus = nil
 		}
 		projectionValues := projections[projection.PlayerID]

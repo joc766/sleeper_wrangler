@@ -71,6 +71,7 @@ func (q *Queries) GetPlayerInfo(ctx context.Context, playerIds []string) ([]GetP
 const getProjections = `-- name: GetProjections :many
 SELECT
   PlayerID,
+  CAST(COALESCE(InjuryStatus, '') AS TEXT) AS InjuryStatus,
   PointsHalfPPR,
   PointsNoTDs,
   TDStats
@@ -90,6 +91,7 @@ type GetProjectionsParams struct {
 
 type GetProjectionsRow struct {
 	Playerid      string
+	Injurystatus  string
 	Pointshalfppr sql.NullFloat64
 	Pointsnotds   sql.NullFloat64
 	Tdstats       sql.NullString
@@ -118,6 +120,7 @@ func (q *Queries) GetProjections(ctx context.Context, arg GetProjectionsParams) 
 		var i GetProjectionsRow
 		if err := rows.Scan(
 			&i.Playerid,
+			&i.Injurystatus,
 			&i.Pointshalfppr,
 			&i.Pointsnotds,
 			&i.Tdstats,

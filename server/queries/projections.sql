@@ -1,6 +1,7 @@
 -- name: GetProjections :many
 SELECT
   PlayerID,
+  CAST(COALESCE(InjuryStatus, '') AS TEXT) AS InjuryStatus,
   PointsHalfPPR,
   PointsNoTDs,
   TDStats

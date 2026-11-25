@@ -161,6 +161,7 @@ type Roster struct {
 	Losses      sql.NullInt64
 	Ties        sql.NullInt64
 	Jsondata    sql.NullString
+	TeamAvatar  sql.NullString
 }
 
 type Seasonstat struct {

@@ -264,19 +264,25 @@ func openDatabase() (*sql.DB, error) {
 }
 
 type AppConfig struct {
-	AvatarSource     string
-	FrontendDir      string
-	PyDir            string
-	Database         *sql.DB
-	Queries          *sqlc.Queries
-	MasterLeagueID   int
-	CountPlayoff     int
-	TrackStartSeason string
-	TrackStartWeek   int
+	ProjectionPollInterval time.Duration
+	AvatarSource           string
+	FrontendDir            string
+	PyDir                  string
+	Database               *sql.DB
+	Queries                *sqlc.Queries
+	MasterLeagueID         int
+	CountPlayoff           int
+	TrackStartSeason       string
+	TrackStartWeek         int
 }
 
 func loadConfig() (AppConfig, error) {
 	var cfg AppConfig
+	projectionPollInterval, err := lookupProjectionPollInterval()
+	if err != nil {
+		return AppConfig{}, err
+	}
+	cfg.ProjectionPollInterval = projectionPollInterval
 	cfg.AvatarSource = os.Getenv("AVATAR_SOURCE")
 	switch cfg.AvatarSource {
 	case "":
@@ -363,7 +369,7 @@ func run() error {
 		subscriberHub.Run(ctx)
 	})
 	workers.Go(func() {
-		updater.RunUpdater(ctx, cfg.Database, cfg.Queries, subscriberHub.Updates)
+		updater.RunUpdater(ctx, cfg.Database, cfg.Queries, subscriberHub.Updates, cfg.ProjectionPollInterval)
 	})
 
 	mux := http.NewServeMux()

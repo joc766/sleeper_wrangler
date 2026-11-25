@@ -35,7 +35,7 @@ func runPythonLoserSimulation(ctx context.Context) (hub.Update, error) {
 	return update, nil
 }
 
-func RunUpdater(ctx context.Context, database *sql.DB, queries *sqlc.Queries, updates chan hub.Update) {
+func RunUpdater(ctx context.Context, database *sql.DB, queries *sqlc.Queries, updates chan hub.Update, projectionPollInterval time.Duration) {
 	nextProjectionCheck := time.Time{}
 	for {
 		if ctx.Err() != nil {
@@ -55,14 +55,14 @@ func RunUpdater(ctx context.Context, database *sql.DB, queries *sqlc.Queries, up
 		if err != nil {
 			log.Printf("Error checking new matchups: %v", err)
 		}
-		// don't want to abuse the projections endpoint since it's undocumented, so only check every 30 min
+		// Keep the undocumented projections endpoint on a separate polling schedule.
 		projectionsChanged := false
 		if !time.Now().Before(nextProjectionCheck) {
 			projectionsChanged, err = CheckNewProjections(ctx, database, queries, nflState.Season, nflState.Week)
 			if err != nil {
-				log.Printf("Error checking matchups: %v", err)
+				log.Printf("Error checking projections: %v", err)
 			} else {
-				nextProjectionCheck = time.Now().Add(time.Minute * 30)
+				nextProjectionCheck = time.Now().Add(projectionPollInterval)
 			}
 		}
 		if gameStatusChanged || matchupsChanged || projectionsChanged {
