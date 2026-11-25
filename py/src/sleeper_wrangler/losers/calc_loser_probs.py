@@ -285,11 +285,13 @@ def create_user_week_data(
             },
             sum(
                 completion_by_team.get(p.team_abbr) == 0.0
+                and (p.injury_status or "").strip().casefold() != "out"
                 for p in starters
             ),
             [
                 p.position for p in starters
                 if completion_by_team.get(p.team_abbr) == 0.0
+                and (p.injury_status or "").strip().casefold() != "out"
             ],
             {
                 p.player_id: p.injury_status.strip()

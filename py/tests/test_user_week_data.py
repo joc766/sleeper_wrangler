@@ -19,6 +19,21 @@ def starter(player_id, status):
 
 
 class InjuryMetadataTests(unittest.TestCase):
+    def test_yet_to_play_excludes_out_and_bye_week_players(self):
+        players = [
+            starter("healthy", None),
+            starter("questionable", "Questionable"),
+            starter("out", " OUT "),
+            starter("bye", None)._replace(team_abbr="BUF"),
+            starter("live", None)._replace(team_abbr="DAL"),
+            starter("finished", None)._replace(team_abbr="NYG"),
+        ]
+        data = create_user_week_data(
+            {"manager": players}, {"CHI": 0.0, "DAL": 0.5, "NYG": 1.0}
+        )["manager"]
+        self.assertEqual(data.yet_to_play, 2)
+        self.assertEqual(data.yet_to_play_positions, ["RB", "RB"])
+
     def test_includes_injuries_without_changing_live_scores(self):
         players = [
             starter("out", " Out "),
